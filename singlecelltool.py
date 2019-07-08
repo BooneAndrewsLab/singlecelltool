@@ -3,13 +3,14 @@ from tkinter import filedialog
 import tkinter as tk
 import pandas as pd
 import numpy as np
+import os
 
 
 class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("1000x800")
+        self.main.geometry("1000x600")
 
         # Declare global variables
         self.global_coordfilename = tk.StringVar()
@@ -27,8 +28,8 @@ class Menu:
         self.frame_initial = tk.Frame(self.main)
         self.label_coordfile = tk.Label(self.frame_initial, text="Coordinates file", width=13, anchor="w")
         self.label_ptypefile = tk.Label(self.frame_initial, text="Phenotype list", width=13, anchor="w")
-        self.label_uploadedcoord = tk.Label(self.frame_initial, textvariable=self.global_coordfilename, anchor="w", wraplength=350)
-        self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename, anchor="w", wraplength=350)
+        self.label_uploadedcoord = tk.Label(self.frame_initial, textvariable=self.global_coordfilename, anchor="w", wraplength=600)
+        self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename, anchor="w", wraplength=600)
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
         self.button_start = tk.Button(self.frame_initial, text="START", justify="left", state="disabled", command=self.start)
@@ -79,14 +80,18 @@ class Menu:
         ptypefile = open(self.global_ptypefilename.get(), 'r')
         self.phenotypes = [p.strip() for p in ptypefile.readlines()]
 
+
         self.canvas_display = tk.Canvas(self.main)
-        self.canvas_display.pack(expand='true', fill='both', side='left')
+        self.canvas_display.pack(expand='yes', fill='both', side='left')
         self.scroll_vertical = tk.Scrollbar(self.main, orient='vertical', command=self.canvas_display.yview)
         self.scroll_vertical.pack(fill='y', side='right')
         self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
 
         self.frame_display = tk.Frame(self.canvas_display)
-        self.canvas_display.create_window(0, 0, window=self.frame_display, anchor='nw')
+        self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
+        self.canvas_display.create_window(30, 10, window=self.button_export, anchor='nw')
+        self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
+
 
         # Process coordinate file
         if self.coord_ext == 'csv':
@@ -94,8 +99,11 @@ class Menu:
         else:
             self.coord_df = pd.read_excel(self.global_coordfilename.get())
 
-        testdf = self.coord_df[:10]
-        for idx, path, center_x, center_y in testdf.itertuples():
+        self.testdf = self.coord_df[:10]
+        self.testdf['Label'] = [None for _i in range(self.testdf.shape[0])]
+        self.selected_options = [tk.StringVar(value=self.phenotypes[0]) for _i in range(self.testdf.shape[0])]
+
+        for idx, path, center_x, center_y, _ptype in self.testdf.itertuples():
             cellcnt = idx + 1
             x = cellcnt % self.display_cellcount
             if x%2 == 0:
@@ -107,16 +115,47 @@ class Menu:
             else:
                 row = int(x/2)
                 col = 0
-
             # print('INDEX: %d - COORDINATE: %d,%d' %(cellcnt, row, col))
             cell = self.imagecrop(path, center_x, center_y)
             cellimage = ImageTk.PhotoImage(cell)
-            self.label_cellimage = tk.Label(self.frame_display, image=cellimage)
+
+            self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=3)
+            self.labelframe_cell.grid(row=row, column=col, padx=30, pady=30)
+
+            self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
             self.label_cellimage.image = cellimage
-            self.label_cellimage.grid(row=row, column=col, padx=30, pady=30)
+            self.label_cellimage.pack(side='left')
+
+            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
+            self.optionmenu.config(width=20)
+
+            self.button_saveptype = tk.Button(self.labelframe_cell, text="Save", name="%s" % str(idx + 1))
+            self.button_saveptype.configure(command=lambda bid=idx, bsave=self.button_saveptype,
+                                                           opts=self.optionmenu: self.save_phenotype(bid, bsave, opts))
+
+            self.button_saveptype.pack(side='bottom')
+            self.optionmenu.pack(side="bottom")
 
         self.frame_display.update_idletasks()
-        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()))
+        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+100))
+
+
+    def exportdata(self):
+        outpath = filedialog.asksaveasfilename(initialdir="/home/myra/phenomics/apps/singlecell",
+                                               title="Select output folder and filename")
+        if outpath.endswith('.csv'):
+            outpath = outpath.split('.')[0] + '.csv'
+        else:
+            if '.' in outpath:
+                outpath = outpath.split('.')[0] + '.csv'
+            outpath = outpath + '.csv'
+        self.testdf.to_csv(outpath, index=False)
+
+    def save_phenotype(self, bid, bsave, opts):
+        # print('SAVE PHENOTYPE - BUTTON ID: %s - BUTTON: %s - OPTIONS: %s' %(bid, bsave, opts))
+        self.testdf.iloc[bid, 3] = self.selected_options[bid].get()
+        bsave.config(state="disabled", text="Saved")
+        opts.config(state="disabled")
 
 
     def imagecrop(self, imagepath, center_x, center_y):
