@@ -4,7 +4,6 @@ from pathlib import Path
 import tkinter as tk
 import pandas as pd
 import numpy as np
-import os
 
 
 class Menu:
@@ -30,11 +29,14 @@ class Menu:
         self.frame_initial = tk.Frame(self.main)
         self.label_coordfile = tk.Label(self.frame_initial, text="Coordinates file", width=13, anchor="w")
         self.label_ptypefile = tk.Label(self.frame_initial, text="Phenotype list", width=13, anchor="w")
-        self.label_uploadedcoord = tk.Label(self.frame_initial, textvariable=self.global_coordfilename, anchor="w", wraplength=600)
-        self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename, anchor="w", wraplength=600)
+        self.label_uploadedcoord = tk.Label(self.frame_initial, textvariable=self.global_coordfilename,
+                                            anchor="w", wraplength=600)
+        self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename,
+                                            anchor="w", wraplength=600)
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
-        self.button_start = tk.Button(self.frame_initial, text="START", justify="left", state="disabled", command=self.start)
+        self.button_start = tk.Button(self.frame_initial, text="START", justify="left", state="disabled",
+                                      command=self.start)
 
         # Initial Frame - Layout
         self.frame_initial.pack(fill=tk.BOTH, expand=True)
@@ -48,10 +50,10 @@ class Menu:
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
-                and (self.global_ptypefilename.get()!= "No file chosen"):
+                and (self.global_ptypefilename.get() != "No file chosen"):
             self.coord_ext = self.global_coordfilename.get().split('.')[1]
-            self.ptype_ext = self.global_ptypefilename.get().split('.')[1]
-            if (self.coord_ext in self.allowed_coordext) and (self.ptype_ext in self.allowed_ptypeext):
+            ptype_ext = self.global_ptypefilename.get().split('.')[1]
+            if (self.coord_ext in self.allowed_coordext) and (ptype_ext in self.allowed_ptypeext):
                 self.button_start.config(state="normal")
             else:
                 self.button_start.config(state="disabled")
@@ -59,20 +61,20 @@ class Menu:
             self.button_start.config(state="disabled")
 
     def coordfile(self):
-        self.coord_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell", # self.homepath
-                                                         title="Select coordinates file",
-                                                         filetypes=(("CSV files", "*.csv"),
-                                                                    ("Excel files", "*.xls*"),
-                                                                    ("All files", "*.*")))
-        self.global_coordfilename.set(self.coord_filename)
+        coord_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell",  # self.homepath
+                                                    title="Select coordinates file",
+                                                    filetypes=(("CSV files", "*.csv"),
+                                                               ("Excel files", "*.xls*"),
+                                                               ("All files", "*.*")))
+        self.global_coordfilename.set(coord_filename)
         self.check_uploads()
 
     def ptypefile(self):
-        self.ptype_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell",
-                                                         title="Select phenotype list file",
-                                                         filetypes=(("Text files", "*.txt"),
-                                                                    ("All files", "*.*")))
-        self.global_ptypefilename.set(self.ptype_filename)
+        ptype_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell",
+                                                    title="Select phenotype list file",
+                                                    filetypes=(("Text files", "*.txt"),
+                                                               ("All files", "*.*")))
+        self.global_ptypefilename.set(ptype_filename)
         self.check_uploads()
 
     def start(self):
@@ -80,8 +82,7 @@ class Menu:
 
         # Process phenotype list
         ptypefile = open(self.global_ptypefilename.get(), 'r')
-        self.phenotypes = [p.strip() for p in ptypefile.readlines()]
-
+        phenotypes = [p.strip() for p in ptypefile.readlines()]
 
         self.canvas_display = tk.Canvas(self.main)
         self.canvas_display.pack(expand='yes', fill='both', side='left')
@@ -105,7 +106,7 @@ class Menu:
 
         self.testdf = self.coord_df[:10]
         self.testdf['Label'] = [None for _i in range(self.testdf.shape[0])]
-        self.selected_options = [tk.StringVar(value=self.phenotypes[0]) for _i in range(self.testdf.shape[0])]
+        self.selected_options = [tk.StringVar(value=phenotypes[0]) for _i in range(self.testdf.shape[0])]
 
         for idx, path, center_x, center_y, _ptype in self.testdf.itertuples():
             cellcnt = idx + 1
@@ -130,7 +131,7 @@ class Menu:
             self.label_cellimage.image = cellimage
             self.label_cellimage.pack(side='left')
 
-            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
+            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *phenotypes)
             self.optionmenu.config(width=20)
 
             self.button_saveptype = tk.Button(self.labelframe_cell, text="Save", name="%s" % str(idx + 1))
@@ -143,7 +144,6 @@ class Menu:
         self.frame_display.update_idletasks()
         self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+100))
 
-
     def restart(self):
         self.canvas_display.delete('all')
         self.canvas_display.pack_forget()
@@ -152,7 +152,6 @@ class Menu:
         self.global_coordfilename.set('No file chosen')
         self.global_ptypefilename.set('No file chosen')
         self.check_uploads()
-
 
     def exportdata(self):
         outpath = filedialog.asksaveasfilename(initialdir="/home/myra/phenomics/apps/singlecell",
@@ -171,7 +170,6 @@ class Menu:
         bsave.config(state="disabled", text="Saved")
         opts.config(state="disabled")
 
-
     def imagecrop(self, imagepath, center_x, center_y):
         loc_left = center_x - self.display_cropsize
         loc_upper = center_y - self.display_cropsize
@@ -182,7 +180,7 @@ class Menu:
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
-        return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200,200), Image.LANCZOS)
+        return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
 
 
 if __name__ == "__main__":
