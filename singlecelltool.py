@@ -9,7 +9,7 @@ class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("600x200")
+        self.main.geometry("1000x800")
 
         # Declare global variables
         self.global_coordfilename = tk.StringVar()
@@ -74,23 +74,19 @@ class Menu:
 
     def start(self):
         self.frame_initial.pack_forget()
-        # Display Frame - Widgets
-        self.canvas_display = tk.Canvas(self.main, yscrollincrement=2, scrollregion=(0,0,500,500))
-        self.scroll_y = tk.Scrollbar(self.canvas_display, orient="vertical", command=self.canvas_display.yview)
-        self.scroll_y.pack(side='right', fill='y')
-        self.canvas_display.configure(yscrollcommand=self.scroll_y.set)
-
-        self.frame_display = tk.Frame(self.canvas_display)
-        # self.label_test = tk.Label(self.frame_display, text="View single cells")
-
-        # Display Frame - Layout
-        self.canvas_display.pack(fill=tk.BOTH, expand=True)
-        self.frame_display.pack(fill=tk.BOTH, expand=True)
-        # self.label_test.grid(row=0, column=0, padx=5, pady=5)
 
         # Process phenotype list
         ptypefile = open(self.global_ptypefilename.get(), 'r')
         self.phenotypes = [p.strip() for p in ptypefile.readlines()]
+
+        self.canvas_display = tk.Canvas(self.main)
+        self.canvas_display.pack(expand='true', fill='both', side='left')
+        self.scroll_vertical = tk.Scrollbar(self.main, orient='vertical', command=self.canvas_display.yview)
+        self.scroll_vertical.pack(fill='y', side='right')
+        self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
+
+        self.frame_display = tk.Frame(self.canvas_display)
+        self.canvas_display.create_window(0, 0, window=self.frame_display, anchor='nw')
 
         # Process coordinate file
         if self.coord_ext == 'csv':
@@ -117,7 +113,11 @@ class Menu:
             cellimage = ImageTk.PhotoImage(cell)
             self.label_cellimage = tk.Label(self.frame_display, image=cellimage)
             self.label_cellimage.image = cellimage
-            self.label_cellimage.grid(row=row, column=col, padx=25, pady=15)
+            self.label_cellimage.grid(row=row, column=col, padx=30, pady=30)
+
+        self.frame_display.update_idletasks()
+        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()))
+
 
     def imagecrop(self, imagepath, center_x, center_y):
         loc_left = center_x - self.display_cropsize
