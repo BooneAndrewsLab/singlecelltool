@@ -1,5 +1,6 @@
 from PIL import ImageTk, Image
 from tkinter import filedialog
+from pathlib import Path
 import tkinter as tk
 import pandas as pd
 import numpy as np
@@ -13,6 +14,7 @@ class Menu:
         self.main.geometry("1000x600")
 
         # Declare global variables
+        self.homepath = str(Path.home())
         self.global_coordfilename = tk.StringVar()
         self.global_ptypefilename = tk.StringVar()
         self.allowed_coordext = ['csv', 'xls', 'xlsx']
@@ -57,7 +59,7 @@ class Menu:
             self.button_start.config(state="disabled")
 
     def coordfile(self):
-        self.coord_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell",
+        self.coord_filename = filedialog.askopenfilename(initialdir="/home/myra/phenomics/apps/singlecell", # self.homepath
                                                          title="Select coordinates file",
                                                          filetypes=(("CSV files", "*.csv"),
                                                                     ("Excel files", "*.xls*"),
@@ -89,11 +91,13 @@ class Menu:
 
         self.frame_display = tk.Frame(self.canvas_display)
         self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
-        self.canvas_display.create_window(30, 10, window=self.button_export, anchor='nw')
+        self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
+
+        self.canvas_display.create_window(30, 10, window=self.button_restart, anchor='nw')
+        self.canvas_display.create_window(100, 10, window=self.button_export, anchor='nw')
         self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
-
-        # Process coordinate file
+        # Process coordinates file
         if self.coord_ext == 'csv':
             self.coord_df = pd.read_csv(self.global_coordfilename.get())
         else:
@@ -138,6 +142,16 @@ class Menu:
 
         self.frame_display.update_idletasks()
         self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+100))
+
+
+    def restart(self):
+        self.canvas_display.delete('all')
+        self.canvas_display.pack_forget()
+        self.scroll_vertical.pack_forget()
+        self.frame_initial.pack(fill=tk.BOTH, expand=True)
+        self.global_coordfilename.set('No file chosen')
+        self.global_ptypefilename.set('No file chosen')
+        self.check_uploads()
 
 
     def exportdata(self):
