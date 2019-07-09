@@ -4,6 +4,7 @@ from pathlib import Path
 import tkinter as tk
 import pandas as pd
 import numpy as np
+import platform
 import math
 
 
@@ -14,6 +15,7 @@ class Menu:
         self.main.geometry("900x600")
 
         # Declare global variables
+        self.os = platform.system()
         self.homepath = str(Path.home())
         self.global_coordfilename = tk.StringVar()
         self.global_ptypefilename = tk.StringVar()
@@ -96,6 +98,12 @@ class Menu:
         self.canvas_display.pack(expand='yes', fill='both', side='left')
         self.scroll_vertical.pack(fill='y', side='right')
         self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
+
+        if self.os == 'Linux':
+            self.canvas_display.bind_all("<4>", self.on_mousewheel)
+            self.canvas_display.bind_all("<5>", self.on_mousewheel)
+        else:
+            self.canvas_display.bind_all("<MouseWheel>", self.on_mousewheel)
 
         # Initialize frame display map
         self.frame_alldisplay = {}
@@ -248,6 +256,17 @@ class Menu:
         image = Image.fromarray(im_new)
         return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
 
+    def on_mousewheel(self, event):
+        if self.os == 'Linux':
+            scroll = -1 if event.delta > 0 else 1
+            if event.num == 4:
+                scroll = scroll * -1
+        elif self.os == 'Windows':
+            scroll = (-1) * int((event.delta / 120) * 1)
+        elif self.os == 'Darwin':
+            scroll = event.delta
+        print('OS: %s - EVENT DELTA: %s - SCROLL: %s' % (self.os, event.delta, scroll))
+        self.canvas_display.yview_scroll(scroll, "units")
 
 if __name__ == "__main__":
     root = tk.Tk()
