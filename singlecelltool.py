@@ -10,20 +10,23 @@ class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("1000x600")
+        self.main.geometry("900x600")
 
         # Declare global variables
         self.homepath = str(Path.home())
         self.global_coordfilename = tk.StringVar()
         self.global_ptypefilename = tk.StringVar()
-        self.allowed_coordext = ['csv', 'xls', 'xlsx']
-        self.allowed_ptypeext = ['txt']
-        self.display_cellcount = 10
-        self.display_cropsize = 30
+        self.global_stats = tk.StringVar()
+        self.global_labeledcellcnt = tk.IntVar()
+        self.global_coordext = ['csv', 'xls', 'xlsx']
+        self.global_ptypeext = ['txt']
+        self.global_displaycellcnt = 10
+        self.global_cropsize = 30
 
         # Initialization
         self.global_coordfilename.set("No file chosen")
         self.global_ptypefilename.set("No file chosen")
+        self.global_labeledcellcnt.set(0)
 
         # Initial Frame - Widgets
         self.frame_initial = tk.Frame(self.main)
@@ -53,7 +56,7 @@ class Menu:
                 and (self.global_ptypefilename.get() != "No file chosen"):
             self.coord_ext = self.global_coordfilename.get().split('.')[1]
             ptype_ext = self.global_ptypefilename.get().split('.')[1]
-            if (self.coord_ext in self.allowed_coordext) and (ptype_ext in self.allowed_ptypeext):
+            if (self.coord_ext in self.global_coordext) and (ptype_ext in self.global_ptypeext):
                 self.button_start.config(state="normal")
             else:
                 self.button_start.config(state="disabled")
@@ -90,12 +93,14 @@ class Menu:
         self.scroll_vertical.pack(fill='y', side='right')
         self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
 
-        self.frame_display = tk.Frame(self.canvas_display)
-        self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
         self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
+        self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
+        self.label_stats = tk.Label(self.canvas_display, textvariable=self.global_stats)
+        self.frame_display = tk.Frame(self.canvas_display)
 
-        self.canvas_display.create_window(30, 10, window=self.button_restart, anchor='nw')
-        self.canvas_display.create_window(100, 10, window=self.button_export, anchor='nw')
+        self.canvas_display.create_window(10, 10, window=self.button_restart, anchor='nw')
+        self.canvas_display.create_window(80, 10, window=self.button_export, anchor='nw')
+        self.canvas_display.create_window(700, 10, window=self.label_stats, anchor='nw')
         self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
         # Process coordinates file
@@ -105,12 +110,15 @@ class Menu:
             self.coord_df = pd.read_excel(self.global_coordfilename.get())
 
         self.testdf = self.coord_df[:10]
-        self.testdf['Label'] = [None for _i in range(self.testdf.shape[0])]
-        self.selected_options = [tk.StringVar(value=phenotypes[0]) for _i in range(self.testdf.shape[0])]
+        self.total_cellcnt = self.coord_df.shape[0]
+        self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
+
+        self.testdf['Label'] = [None for _i in range(self.global_displaycellcnt)]
+        self.selected_options = [tk.StringVar(value=phenotypes[0]) for _i in range(self.global_displaycellcnt)]
 
         for idx, path, center_x, center_y, _ptype in self.testdf.itertuples():
             cellcnt = idx + 1
-            x = cellcnt % self.display_cellcount
+            x = cellcnt % self.global_displaycellcnt
             if x%2 == 0:
                 col = 1
                 if x != 0:
@@ -125,7 +133,7 @@ class Menu:
             cellimage = ImageTk.PhotoImage(cell)
 
             self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=3)
-            self.labelframe_cell.grid(row=row, column=col, padx=30, pady=30)
+            self.labelframe_cell.grid(row=row, column=col, padx=10, pady=20)
 
             self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
             self.label_cellimage.image = cellimage
@@ -165,16 +173,17 @@ class Menu:
         self.testdf.to_csv(outpath, index=False)
 
     def save_phenotype(self, bid, bsave, opts):
-        # print('SAVE PHENOTYPE - BUTTON ID: %s - BUTTON: %s - OPTIONS: %s' %(bid, bsave, opts))
         self.testdf.iloc[bid, 3] = self.selected_options[bid].get()
+        self.global_labeledcellcnt.set(self.global_labeledcellcnt.get() + 1)
+        self.global_stats.set("Label count: %d out of %d" % (self.global_labeledcellcnt.get(), self.total_cellcnt))
         bsave.config(state="disabled", text="Saved")
         opts.config(state="disabled")
 
     def imagecrop(self, imagepath, center_x, center_y):
-        loc_left = center_x - self.display_cropsize
-        loc_upper = center_y - self.display_cropsize
-        loc_right = center_x + self.display_cropsize
-        loc_lower = center_y + self.display_cropsize
+        loc_left = center_x - self.global_cropsize
+        loc_upper = center_y - self.global_cropsize
+        loc_right = center_x + self.global_cropsize
+        loc_lower = center_y + self.global_cropsize
         image = Image.open(imagepath)
         im_arr = np.array(image).astype(float)
         im_scale = 1 / im_arr.max()
