@@ -4,6 +4,7 @@ from pathlib import Path
 import tkinter as tk
 import pandas as pd
 import numpy as np
+import math
 
 
 class Menu:
@@ -18,15 +19,17 @@ class Menu:
         self.global_ptypefilename = tk.StringVar()
         self.global_stats = tk.StringVar()
         self.global_labeledcellcnt = tk.IntVar()
+        self.global_currentpage = tk.IntVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
-        self.global_displaycellcnt = 10
+        self.global_displaycellcnt = 13
         self.global_cropsize = 30
 
         # Initialization
         self.global_coordfilename.set("No file chosen")
         self.global_ptypefilename.set("No file chosen")
         self.global_labeledcellcnt.set(0)
+        self.global_currentpage.set(1)
 
         # Initial Frame - Widgets
         self.frame_initial = tk.Frame(self.main)
@@ -42,7 +45,7 @@ class Menu:
                                       command=self.start)
 
         # Initial Frame - Layout
-        self.frame_initial.pack(fill=tk.BOTH, expand=True)
+        self.frame_initial.pack(fill='both', expand=True)
         self.label_coordfile.grid(row=0, column=0, padx=5, pady=5)
         self.button_coordfile.grid(row=0, column=1, padx=5, pady=5)
         self.label_uploadedcoord.grid(row=0, column=2, padx=5, pady=5)
@@ -87,17 +90,18 @@ class Menu:
         ptypefile = open(self.global_ptypefilename.get(), 'r')
         phenotypes = [p.strip() for p in ptypefile.readlines()]
 
+        # Main canvas display
         self.canvas_display = tk.Canvas(self.main)
-        self.canvas_display.pack(expand='yes', fill='both', side='left')
         self.scroll_vertical = tk.Scrollbar(self.main, orient='vertical', command=self.canvas_display.yview)
+        self.canvas_display.pack(expand='yes', fill='both', side='left')
         self.scroll_vertical.pack(fill='y', side='right')
         self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
 
+        # Inside the canvas
         self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
         self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
         self.label_stats = tk.Label(self.canvas_display, textvariable=self.global_stats)
         self.frame_display = tk.Frame(self.canvas_display)
-
         self.canvas_display.create_window(10, 10, window=self.button_restart, anchor='nw')
         self.canvas_display.create_window(80, 10, window=self.button_export, anchor='nw')
         self.canvas_display.create_window(700, 10, window=self.label_stats, anchor='nw')
@@ -109,10 +113,11 @@ class Menu:
         else:
             self.coord_df = pd.read_excel(self.global_coordfilename.get())
 
-        self.testdf = self.coord_df[:10]
         self.total_cellcnt = self.coord_df.shape[0]
+        self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt))
         self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
 
+        self.testdf = self.coord_df[:self.global_displaycellcnt]
         self.testdf['Label'] = [None for _i in range(self.global_displaycellcnt)]
         self.selected_options = [tk.StringVar(value=phenotypes[0]) for _i in range(self.global_displaycellcnt)]
 
@@ -120,11 +125,18 @@ class Menu:
             cellcnt = idx + 1
             x = cellcnt % self.global_displaycellcnt
             if x%2 == 0:
-                col = 1
                 if x != 0:
                     row = int(x/2) - 1
                 else:
                     row = int(cellcnt/2) - 1
+                if cellcnt == self.global_displaycellcnt:
+                    if cellcnt%2 == 0:
+                        col = 1
+                    else:
+                        row = int(cellcnt / 2)
+                        col = 0
+                else:
+                    col = 1
             else:
                 row = int(x/2)
                 col = 0
@@ -149,8 +161,17 @@ class Menu:
             self.button_saveptype.pack(side='bottom')
             self.optionmenu.pack(side="bottom")
 
+        # LabelFrame for next button/batch
+        self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
+        self.labelframe_cell.grid(row=row+1, column=0, columnspan=2, pady=15)
+        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next")
+        self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (self.global_currentpage.get(),
+                                                                                       self.total_batchpage))
+        self.button_nextbatch.pack(side='right')
+        self.label_batchpage.pack(side='left')
+
         self.frame_display.update_idletasks()
-        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+100))
+        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+50))
 
     def restart(self):
         self.canvas_display.delete('all')
