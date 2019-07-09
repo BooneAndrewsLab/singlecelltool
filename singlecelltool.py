@@ -125,14 +125,13 @@ class Menu:
         self.create_cellframes(self.coord_df, self.global_currentpage.get())  # create frame for each cell
 
     def create_cellframes(self, dataframe, currentpage):
-        # Create frame display for current page
+        # Create new frame display
         self.frame_display = tk.Frame(self.canvas_display)
         self.frame_alldisplay[currentpage] = self.frame_display
         self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
         start = (currentpage-1)*self.global_displaycellcnt
         end = currentpage*self.global_displaycellcnt
-        # print('CREATE CELLFRAMES - CURRENT PAGE: %d - START: %d - END: %d' %(currentpage, start, end))
         currentbatch_df = dataframe[start:end]
 
         for idx, path, center_x, center_y, _ptype in currentbatch_df.itertuples():
@@ -178,29 +177,37 @@ class Menu:
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
         self.labelframe_cell.grid(row=row+1, column=0, columnspan=2, pady=15)
-        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next", command=self.nextbatch)
+        self.button_prevbatch = tk.Button(self.labelframe_cell, text="Prev",
+                                          command=lambda type='prev': self.prevnextbatch(type))
+        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next",
+                                          command=lambda type='next': self.prevnextbatch(type))
         self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (currentpage,
                                                                                        self.total_batchpage))
+
         self.button_nextbatch.pack(side='right')
+        self.button_prevbatch.pack(side='right')
         self.label_batchpage.pack(side='left')
 
         # Setup canvas scroll region
         self.frame_display.update_idletasks()
         self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height() + 50))
 
-        if currentpage == self.total_batchpage:
-            self.button_nextbatch.config(state='disabled')
-
-    def nextbatch(self):
-        nextpage = self.global_currentpage.get() + 1
-        # print('NEXT PAGE: %d' %nextpage)
-        self.global_currentpage.set(nextpage)
-        if nextpage in self.frame_alldisplay.keys():
-            # print('\tpage already exists. raise frame')
-            self.frame_alldisplay[nextpage].tkraise()
+    def prevnextbatch(self, type):
+        if type == 'next':
+            if self.global_currentpage.get() != self.total_batchpage:
+                page = self.global_currentpage.get() + 1
+            else:
+                page = 1
         else:
-            # print('\tpage does not exist. creating new frame...')
-            self.create_cellframes(self.coord_df, nextpage)
+            if self.global_currentpage.get() != 1:
+                page = self.global_currentpage.get() - 1
+            else:
+                page = self.total_batchpage
+        self.global_currentpage.set(page)
+        if page in self.frame_alldisplay.keys():
+            self.frame_alldisplay[page].tkraise()
+        else:
+            self.create_cellframes(self.coord_df, page)
 
     def restart(self):
         self.canvas_display.delete('all')
