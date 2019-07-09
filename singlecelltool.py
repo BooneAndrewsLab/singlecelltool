@@ -22,7 +22,7 @@ class Menu:
         self.global_currentpage = tk.IntVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
-        self.global_displaycellcnt = 13
+        self.global_displaycellcnt = 20
         self.global_cropsize = 30
 
         # Initialization
@@ -88,7 +88,7 @@ class Menu:
 
         # Process phenotype list
         ptypefile = open(self.global_ptypefilename.get(), 'r')
-        phenotypes = [p.strip() for p in ptypefile.readlines()]
+        self.phenotypes = [p.strip() for p in ptypefile.readlines()]
 
         # Main canvas display
         self.canvas_display = tk.Canvas(self.main)
@@ -97,15 +97,16 @@ class Menu:
         self.scroll_vertical.pack(fill='y', side='right')
         self.canvas_display.configure(yscrollcommand=self.scroll_vertical.set)
 
+        # Initialize frame display map
+        self.frame_alldisplay = {}
+
         # Inside the canvas
         self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
         self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
         self.label_stats = tk.Label(self.canvas_display, textvariable=self.global_stats)
-        self.frame_display = tk.Frame(self.canvas_display)
         self.canvas_display.create_window(10, 10, window=self.button_restart, anchor='nw')
         self.canvas_display.create_window(80, 10, window=self.button_export, anchor='nw')
         self.canvas_display.create_window(700, 10, window=self.label_stats, anchor='nw')
-        self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
         # Process coordinates file
         if self.coord_ext == 'csv':
@@ -117,18 +118,31 @@ class Menu:
         self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt))
         self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
 
-        self.testdf = self.coord_df[:self.global_displaycellcnt]
-        self.testdf['Label'] = [None for _i in range(self.global_displaycellcnt)]
-        self.selected_options = [tk.StringVar(value=phenotypes[0]) for _i in range(self.global_displaycellcnt)]
+        # self.testdf = self.coord_df[:self.global_displaycellcnt]
+        self.coord_df['Label'] = [None for _i in range(self.total_cellcnt)]
+        self.selected_options = [tk.StringVar(value=self.phenotypes[0]) for _i in range(self.total_cellcnt)]
 
-        for idx, path, center_x, center_y, _ptype in self.testdf.itertuples():
+        self.create_cellframes(self.coord_df, self.global_currentpage.get())  # create frame for each cell
+
+    def create_cellframes(self, dataframe, currentpage):
+        # Create frame display for current page
+        self.frame_display = tk.Frame(self.canvas_display)
+        self.frame_alldisplay[currentpage] = self.frame_display
+        self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
+
+        start = (currentpage-1)*self.global_displaycellcnt
+        end = currentpage*self.global_displaycellcnt
+        # print('CREATE CELLFRAMES - CURRENT PAGE: %d - START: %d - END: %d' %(currentpage, start, end))
+        currentbatch_df = dataframe[start:end]
+
+        for idx, path, center_x, center_y, _ptype in currentbatch_df.itertuples():
             cellcnt = idx + 1
             x = cellcnt % self.global_displaycellcnt
             if x%2 == 0:
                 if x != 0:
                     row = int(x/2) - 1
                 else:
-                    row = int(cellcnt/2) - 1
+                    row = int(self.global_displaycellcnt/2) - 1
                 if cellcnt == self.global_displaycellcnt:
                     if cellcnt%2 == 0:
                         col = 1
@@ -140,7 +154,7 @@ class Menu:
             else:
                 row = int(x/2)
                 col = 0
-            # print('INDEX: %d - COORDINATE: %d,%d' %(cellcnt, row, col))
+            # print('\tINDEX: %d - COORDINATE: %d,%d' %(cellcnt, row, col))
             cell = self.imagecrop(path, center_x, center_y)
             cellimage = ImageTk.PhotoImage(cell)
 
@@ -151,7 +165,7 @@ class Menu:
             self.label_cellimage.image = cellimage
             self.label_cellimage.pack(side='left')
 
-            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *phenotypes)
+            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
             self.optionmenu.config(width=20)
 
             self.button_saveptype = tk.Button(self.labelframe_cell, text="Save", name="%s" % str(idx + 1))
@@ -164,14 +178,29 @@ class Menu:
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
         self.labelframe_cell.grid(row=row+1, column=0, columnspan=2, pady=15)
-        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next")
-        self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (self.global_currentpage.get(),
+        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next", command=self.nextbatch)
+        self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (currentpage,
                                                                                        self.total_batchpage))
         self.button_nextbatch.pack(side='right')
         self.label_batchpage.pack(side='left')
 
+        # Setup canvas scroll region
         self.frame_display.update_idletasks()
-        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height()+50))
+        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height() + 50))
+
+        if currentpage == self.total_batchpage:
+            self.button_nextbatch.config(state='disabled')
+
+    def nextbatch(self):
+        nextpage = self.global_currentpage.get() + 1
+        # print('NEXT PAGE: %d' %nextpage)
+        self.global_currentpage.set(nextpage)
+        if nextpage in self.frame_alldisplay.keys():
+            # print('\tpage already exists. raise frame')
+            self.frame_alldisplay[nextpage].tkraise()
+        else:
+            # print('\tpage does not exist. creating new frame...')
+            self.create_cellframes(self.coord_df, nextpage)
 
     def restart(self):
         self.canvas_display.delete('all')
@@ -191,10 +220,10 @@ class Menu:
             if '.' in outpath:
                 outpath = outpath.split('.')[0] + '.csv'
             outpath = outpath + '.csv'
-        self.testdf.to_csv(outpath, index=False)
+        self.coord_df.to_csv(outpath, index=False)
 
     def save_phenotype(self, bid, bsave, opts):
-        self.testdf.iloc[bid, 3] = self.selected_options[bid].get()
+        self.coord_df.iloc[bid, 3] = self.selected_options[bid].get()
         self.global_labeledcellcnt.set(self.global_labeledcellcnt.get() + 1)
         self.global_stats.set("Label count: %d out of %d" % (self.global_labeledcellcnt.get(), self.total_cellcnt))
         bsave.config(state="disabled", text="Saved")
