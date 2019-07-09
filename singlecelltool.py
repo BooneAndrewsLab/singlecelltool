@@ -265,10 +265,16 @@ class Menu:
             scroll = (-1) * int((event.delta / 120) * 1)
         elif self.os == 'Darwin':
             scroll = event.delta
-        print('OS: %s - EVENT DELTA: %s - SCROLL: %s' % (self.os, event.delta, scroll))
+        # print('OS: %s - EVENT DELTA: %s - SCROLL: %s' % (self.os, event.delta, scroll))
         self.canvas_display.yview_scroll(scroll, "units")
 
 if __name__ == "__main__":
     root = tk.Tk()
     menu = Menu(root)
     root.mainloop()
+    # while True:
+    #     try:
+    #         root.mainloop()
+    #         break
+    #     except UnicodeDecodeError:
+    #         pass
