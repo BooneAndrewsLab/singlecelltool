@@ -8,12 +8,13 @@ Linux, MacOS, Windows
 
 
 ### Prerequisites
-Python 3: https://www.python.org/downloads
+Python 2.7 or 3: https://www.python.org/downloads
 
-### Python Requirements
+### Required packages
 ```
 pillow
 pandas
+future
 numpy
 xlrd
 ```

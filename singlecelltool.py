@@ -1,11 +1,11 @@
 from PIL import ImageTk, Image
 from tkinter import filedialog
-from pathlib import Path
 import tkinter as tk
 import pandas as pd
 import numpy as np
 import platform
 import math
+import os
 
 
 class Menu:
@@ -16,7 +16,7 @@ class Menu:
 
         # Declare global variables
         self.os = platform.system()
-        self.homepath = str(Path.home())
+        self.homepath = os.path.expanduser('~')
         self.global_coordfilename = tk.StringVar()
         self.global_ptypefilename = tk.StringVar()
         self.global_stats = tk.StringVar()
@@ -265,16 +265,11 @@ class Menu:
             scroll = (-1) * int((event.delta / 120) * 1)
         elif self.os == 'Darwin':
             scroll = event.delta
-        # print('OS: %s - EVENT DELTA: %s - SCROLL: %s' % (self.os, event.delta, scroll))
+        else:
+            scroll = 1
         self.canvas_display.yview_scroll(scroll, "units")
 
 if __name__ == "__main__":
     root = tk.Tk()
     menu = Menu(root)
     root.mainloop()
-    # while True:
-    #     try:
-    #         root.mainloop()
-    #         break
-    #     except UnicodeDecodeError:
-    #         pass
