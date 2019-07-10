@@ -22,16 +22,21 @@ class Menu:
         self.global_stats = tk.StringVar()
         self.global_labeledcellcnt = tk.IntVar()
         self.global_currentpage = tk.IntVar()
+        self.global_displaycellcnt = tk.IntVar()
+        self.global_cropsize = tk.IntVar()
+        self.global_limitcell = tk.StringVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
-        self.global_displaycellcnt = 20
-        self.global_cropsize = 30
+
 
         # Initialization
         self.global_coordfilename.set("No file chosen")
         self.global_ptypefilename.set("No file chosen")
         self.global_labeledcellcnt.set(0)
         self.global_currentpage.set(1)
+        self.global_displaycellcnt.set(20)
+        self.global_cropsize.set(50)
+        self.global_limitcell.set("")
 
         # Initial Frame - Widgets
         self.frame_initial = tk.Frame(self.main)
@@ -41,6 +46,19 @@ class Menu:
                                             anchor="w", wraplength=600)
         self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename,
                                             anchor="w", wraplength=600)
+
+        self.label_limitcell = tk.Label(self.frame_initial, text="Cell count", width=13, anchor="w")
+        self.entry_limitcell = tk.Entry(self.frame_initial, textvariable=self.global_limitcell, width=12)
+        self.label_defaultlimitcell = tk.Label(self.frame_initial, text="Optional. By default, all cells will be processed")
+
+        self.label_displaycell = tk.Label(self.frame_initial, text="Display limit", width=13, anchor="w")
+        self.entry_displaycell = tk.Entry(self.frame_initial, textvariable=self.global_displaycellcnt, width=12)
+        self.label_defaultdisplaycell = tk.Label(self.frame_initial, text="Number of cells to be displayed on a single page")
+
+        self.label_cropsize = tk.Label(self.frame_initial, text="Crop size", width=13, anchor="w")
+        self.entry_cropsize = tk.Entry(self.frame_initial, textvariable=self.global_cropsize, width=12)
+        self.label_defaultcropsize = tk.Label(self.frame_initial, text="Pixel size to be used in cropping cells from the image")
+
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
         self.button_start = tk.Button(self.frame_initial, text="START", justify="left", state="disabled",
@@ -50,11 +68,20 @@ class Menu:
         self.frame_initial.pack(fill='both', expand=True)
         self.label_coordfile.grid(row=0, column=0, padx=5, pady=5)
         self.button_coordfile.grid(row=0, column=1, padx=5, pady=5)
-        self.label_uploadedcoord.grid(row=0, column=2, padx=5, pady=5)
+        self.label_uploadedcoord.grid(row=0, column=2, padx=5, pady=5, sticky="w")
         self.label_ptypefile.grid(row=1, column=0, padx=5, pady=5)
         self.button_ptypefile.grid(row=1, column=1, padx=5, pady=5)
-        self.label_uploadedptype.grid(row=1, column=2, padx=5, pady=5)
-        self.button_start.grid(row=3, column=0, padx=5, pady=15)
+        self.label_uploadedptype.grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        self.label_limitcell.grid(row=2, column=0, padx=5, pady=5)
+        self.entry_limitcell.grid(row=2, column=1, padx=5, pady=5)
+        self.label_defaultlimitcell.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.label_displaycell.grid(row=3, column=0, padx=5, pady=5)
+        self.entry_displaycell.grid(row=3, column=1, padx=5, pady=5)
+        self.label_defaultdisplaycell.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+        self.label_cropsize.grid(row=4, column=0, padx=5, pady=5)
+        self.entry_cropsize.grid(row=4, column=1, padx=5, pady=5)
+        self.label_defaultcropsize.grid(row=4, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=6, column=0, padx=5, pady=15)
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -122,11 +149,16 @@ class Menu:
         else:
             self.coord_df = pd.read_excel(self.global_coordfilename.get())
 
-        self.total_cellcnt = self.coord_df.shape[0]
-        self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt))
+        try:
+            self.total_cellcnt = int(self.global_limitcell.get())
+            self.coord_df = self.coord_df[:self.total_cellcnt]
+        except ValueError:
+            self.total_cellcnt = self.coord_df.shape[0]
+
+        self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt.get()))
         self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
 
-        # self.testdf = self.coord_df[:self.global_displaycellcnt]
+        # self.testdf = self.coord_df[:self.global_displaycellcnt.get()]
         self.coord_df['Label'] = [None for _i in range(self.total_cellcnt)]
         self.selected_options = [tk.StringVar(value=self.phenotypes[0]) for _i in range(self.total_cellcnt)]
 
@@ -138,19 +170,19 @@ class Menu:
         self.frame_alldisplay[currentpage] = self.frame_display
         self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
-        start = (currentpage-1)*self.global_displaycellcnt
-        end = currentpage*self.global_displaycellcnt
+        start = (currentpage-1)*self.global_displaycellcnt.get()
+        end = currentpage*self.global_displaycellcnt.get()
         currentbatch_df = dataframe[start:end]
 
         for idx, path, center_x, center_y, _ptype in currentbatch_df.itertuples():
             cellcnt = idx + 1
-            x = cellcnt % self.global_displaycellcnt
+            x = cellcnt % self.global_displaycellcnt.get()
             if x%2 == 0:
                 if x != 0:
                     row = int(x/2) - 1
                 else:
-                    row = int(self.global_displaycellcnt/2) - 1
-                if cellcnt == self.global_displaycellcnt:
+                    row = int(self.global_displaycellcnt.get()/2) - 1
+                if cellcnt == self.global_displaycellcnt.get():
                     if cellcnt%2 == 0:
                         col = 1
                     else:
@@ -224,6 +256,9 @@ class Menu:
         self.frame_initial.pack(fill=tk.BOTH, expand=True)
         self.global_coordfilename.set('No file chosen')
         self.global_ptypefilename.set('No file chosen')
+        self.global_limitcell.set('')
+        self.global_displaycellcnt.set(20)
+        self.global_cropsize.set(50)
         self.check_uploads()
 
     def exportdata(self):
@@ -245,10 +280,10 @@ class Menu:
         opts.config(state="disabled")
 
     def imagecrop(self, imagepath, center_x, center_y):
-        loc_left = center_x - self.global_cropsize
-        loc_upper = center_y - self.global_cropsize
-        loc_right = center_x + self.global_cropsize
-        loc_lower = center_y + self.global_cropsize
+        loc_left = center_x - self.global_cropsize.get()/2
+        loc_upper = center_y - self.global_cropsize.get()/2
+        loc_right = center_x + self.global_cropsize.get()/2
+        loc_lower = center_y + self.global_cropsize.get()/2
         image = Image.open(imagepath)
         im_arr = np.array(image).astype(float)
         im_scale = 1 / im_arr.max()
