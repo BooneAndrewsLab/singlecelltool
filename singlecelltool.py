@@ -30,13 +30,7 @@ class Menu:
 
 
         # Initialization
-        self.global_coordfilename.set("No file chosen")
-        self.global_ptypefilename.set("No file chosen")
-        self.global_labeledcellcnt.set(0)
-        self.global_currentpage.set(1)
-        self.global_displaycellcnt.set(20)
-        self.global_cropsize.set(50)
-        self.global_limitcell.set("")
+        self.initialize()
 
         # Initial Frame - Widgets
         self.frame_initial = tk.Frame(self.main)
@@ -249,16 +243,23 @@ class Menu:
         else:
             self.create_cellframes(self.coord_df, page)
 
+    def initialize(self):
+        self.global_coordfilename.set("No file chosen")
+        self.global_ptypefilename.set("No file chosen")
+        self.global_labeledcellcnt.set(0)
+        self.global_currentpage.set(1)
+        self.global_displaycellcnt.set(20)
+        self.global_cropsize.set(50)
+        self.global_limitcell.set("")
+
     def restart(self):
         self.canvas_display.delete('all')
         self.canvas_display.pack_forget()
         self.scroll_vertical.pack_forget()
         self.frame_initial.pack(fill=tk.BOTH, expand=True)
-        self.global_coordfilename.set('No file chosen')
-        self.global_ptypefilename.set('No file chosen')
-        self.global_limitcell.set('')
-        self.global_displaycellcnt.set(20)
-        self.global_cropsize.set(50)
+        self.initialize()
+
+        # self.frame_alldisplay = {}
         self.check_uploads()
 
     def exportdata(self):
