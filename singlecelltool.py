@@ -25,9 +25,9 @@ class Menu:
         self.global_displaycellcnt = tk.IntVar()
         self.global_cropsize = tk.IntVar()
         self.global_limitcell = tk.StringVar()
+        self.global_initialcol = tk.IntVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
-
 
         # Initialization
         self.initialize()
@@ -150,11 +150,13 @@ class Menu:
         except ValueError:
             self.total_cellcnt = self.coord_df.shape[0]
 
+        self.global_initialcol.set(self.coord_df.shape[1])
+
         self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt.get()))
         self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
 
         # self.testdf = self.coord_df[:self.global_displaycellcnt.get()]
-        self.coord_df['Label'] = [None for _i in range(self.total_cellcnt)]
+        self.coord_df['Saved Label'] = [None for _i in range(self.total_cellcnt)]
         self.selected_options = [tk.StringVar(value=self.phenotypes[0]) for _i in range(self.total_cellcnt)]
 
         self.create_cellframes(self.coord_df, self.global_currentpage.get())  # create frame for each cell
@@ -171,7 +173,7 @@ class Menu:
         currentbatch_df = dataframe[start:end]
 
         pos = 1
-        for idx, path, center_x, center_y, _ptype in currentbatch_df.itertuples():
+        for idx, path, center_x, center_y in currentbatch_df.iloc[:,:3].itertuples():
             modpos = pos % 2
             if modpos == 0:
                 row = int(pos/2) - 1
@@ -265,6 +267,7 @@ class Menu:
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(50)
         self.global_limitcell.set("")
+        self.global_initialcol.set(0)
 
     def restart(self):
         self.canvas_display.delete('all')
@@ -288,7 +291,7 @@ class Menu:
         self.coord_df.to_csv(outpath, index=False)
 
     def save_phenotype(self, bid, bsave, opts):
-        self.coord_df.iloc[bid, 3] = self.selected_options[bid].get()
+        self.coord_df.iloc[bid, self.global_initialcol.get()] = self.selected_options[bid].get()
         self.global_labeledcellcnt.set(self.global_labeledcellcnt.get() + 1)
         self.global_stats.set("Label count: %d out of %d" % (self.global_labeledcellcnt.get(), self.total_cellcnt))
         bsave.config(state="disabled", text="Saved")
