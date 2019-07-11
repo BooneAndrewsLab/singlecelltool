@@ -224,7 +224,9 @@ class Menu:
 
         # Setup canvas scroll region
         self.frame_display.update_idletasks()
-        self.canvas_display.configure(scrollregion=(0, 0, 800, self.frame_display.winfo_height() + 50))
+        self.canvas_display.configure(scrollregion=(0, 0, self.frame_display.winfo_width(),
+                                                    self.labelframe_cell.winfo_y() + 90))
+
 
     def prevnextbatch(self, type):
         if type == 'next':
@@ -239,6 +241,8 @@ class Menu:
                 page = self.total_batchpage
         self.global_currentpage.set(page)
         if page in self.frame_alldisplay.keys():
+            self.canvas_display.configure(scrollregion=(0, 0, self.frame_alldisplay[page].winfo_width(),
+                                                        self.frame_alldisplay[page].winfo_height() + 45))
             self.frame_alldisplay[page].tkraise()
         else:
             self.create_cellframes(self.coord_df, page)
