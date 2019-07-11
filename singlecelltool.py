@@ -168,26 +168,18 @@ class Menu:
         end = currentpage*self.global_displaycellcnt.get()
         currentbatch_df = dataframe[start:end]
 
+        pos = 1
         for idx, path, center_x, center_y, _ptype in currentbatch_df.itertuples():
-            cellcnt = idx + 1
-            x = cellcnt % self.global_displaycellcnt.get()
-            if x%2 == 0:
-                if x != 0:
-                    row = int(x/2) - 1
-                else:
-                    row = int(self.global_displaycellcnt.get()/2) - 1
-                if cellcnt == self.global_displaycellcnt.get():
-                    if cellcnt%2 == 0:
-                        col = 1
-                    else:
-                        row = int(cellcnt / 2)
-                        col = 0
-                else:
-                    col = 1
+            modpos = pos % 2
+            if modpos == 0:
+                row = int(pos/2) - 1
+                col = 1
             else:
-                row = int(x/2)
+                row = int(pos/2)
                 col = 0
-            # print('\tINDEX: %d - COORDINATE: %d,%d' %(cellcnt, row, col))
+
+            # print('\tINDEX: %d - POSITION: %s - COORDINATE: %d,%d' %(idx+1, pos, row, col))
+            pos += 1
             cell = self.imagecrop(path, center_x, center_y)
             cellimage = ImageTk.PhotoImage(cell)
 
