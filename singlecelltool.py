@@ -128,6 +128,7 @@ class Menu:
 
         # Initialize frame display map
         self.frame_alldisplay = {}
+        self.canvas_allframes = {}
 
         # Inside the canvas
         self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
@@ -162,7 +163,7 @@ class Menu:
         # Create new frame display
         self.frame_display = tk.Frame(self.canvas_display)
         self.frame_alldisplay[currentpage] = self.frame_display
-        self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
+        self.canvas_allframes[currentpage] = self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
 
         start = (currentpage-1)*self.global_displaycellcnt.get()
         end = currentpage*self.global_displaycellcnt.get()
@@ -218,6 +219,7 @@ class Menu:
         self.frame_display.update_idletasks()
         self.canvas_display.configure(scrollregion=(0, 0, self.frame_display.winfo_width(),
                                                     self.labelframe_cell.winfo_y() + 90))
+        self.canvas_display.yview_moveto(0)
 
 
     def prevnextbatch(self, type):
@@ -235,8 +237,16 @@ class Menu:
         if page in self.frame_alldisplay.keys():
             self.canvas_display.configure(scrollregion=(0, 0, self.frame_alldisplay[page].winfo_width(),
                                                         self.frame_alldisplay[page].winfo_height() + 45))
+            self.canvas_display.yview_moveto(0)
             self.frame_alldisplay[page].tkraise()
+            self.canvas_display.itemconfigure(self.canvas_allframes[page], state='normal')
+            for p in self.frame_alldisplay.keys():
+                if p != page:
+                    self.canvas_display.itemconfigure(self.canvas_allframes[p], state='hidden')
         else:
+            for p in self.frame_alldisplay.keys():
+                if p != page:
+                    self.canvas_display.itemconfigure(self.canvas_allframes[p], state='hidden')
             self.create_cellframes(self.coord_df, page)
 
     def initialize(self):
