@@ -163,7 +163,8 @@ class Menu:
         # Create new frame display
         self.frame_display = tk.Frame(self.canvas_display)
         self.frame_alldisplay[currentpage] = self.frame_display
-        self.canvas_allframes[currentpage] = self.canvas_display.create_window(0, 50, window=self.frame_display, anchor='nw')
+        self.canvas_allframes[currentpage] = self.canvas_display.create_window(0, 50, window=self.frame_display,
+                                                                               anchor='nw')
 
         start = (currentpage-1)*self.global_displaycellcnt.get()
         end = currentpage*self.global_displaycellcnt.get()
@@ -184,12 +185,15 @@ class Menu:
             cell = self.imagecrop(path, center_x, center_y)
             cellimage = ImageTk.PhotoImage(cell)
 
-            self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=3)
+            self.labelframe_cell = tk.LabelFrame(self.frame_display, text="%d" %(idx+1), bd=3)
             self.labelframe_cell.grid(row=row, column=col, padx=10, pady=20)
 
             self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
             self.label_cellimage.image = cellimage
             self.label_cellimage.pack(side='left')
+
+            self.label_cellpath = tk.Label(self.labelframe_cell, text="%s" % os.path.basename(path).split('.')[0])
+            self.label_cellcoord = tk.Label(self.labelframe_cell, text="x=%s, y=%s" % (center_x, center_y))
 
             self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
             self.optionmenu.config(width=20)
@@ -198,22 +202,26 @@ class Menu:
             self.button_saveptype.configure(command=lambda bid=idx, bsave=self.button_saveptype,
                                                            opts=self.optionmenu: self.save_phenotype(bid, bsave, opts))
 
-            self.button_saveptype.pack(side='bottom')
-            self.optionmenu.pack(side="bottom")
+            self.label_cellpath.pack(pady=(30, 5))
+            self.label_cellcoord.pack(pady=(5,30))
+            self.optionmenu.pack()
+            self.button_saveptype.pack()
 
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
         self.labelframe_cell.grid(row=row+1, column=0, columnspan=2, pady=15)
-        self.button_prevbatch = tk.Button(self.labelframe_cell, text="Prev",
-                                          command=lambda type='prev': self.prevnextbatch(type))
-        self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next",
-                                          command=lambda type='next': self.prevnextbatch(type))
-        self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (currentpage,
-                                                                                       self.total_batchpage))
 
-        self.button_nextbatch.pack(side='right')
-        self.button_prevbatch.pack(side='right')
-        self.label_batchpage.pack(side='left')
+        if self.total_batchpage > 1:
+            self.button_prevbatch = tk.Button(self.labelframe_cell, text="Prev",
+                                              command=lambda type='prev': self.prevnextbatch(type))
+            self.button_nextbatch = tk.Button(self.labelframe_cell, text="Next",
+                                              command=lambda type='next': self.prevnextbatch(type))
+            self.label_batchpage = tk.Label(self.labelframe_cell, text="Batch %d of %d" % (currentpage,
+                                                                                           self.total_batchpage))
+
+            self.button_nextbatch.pack(side='right')
+            self.button_prevbatch.pack(side='right')
+            self.label_batchpage.pack(side='left')
 
         # Setup canvas scroll region
         self.frame_display.update_idletasks()
