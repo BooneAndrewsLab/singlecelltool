@@ -25,7 +25,7 @@ class Menu:
         self.global_displaycellcnt = tk.IntVar()
         self.global_cropsize = tk.IntVar()
         self.global_limitcell = tk.StringVar()
-        self.global_initialcol = tk.IntVar()
+        self.global_colcount = tk.IntVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
 
@@ -34,7 +34,7 @@ class Menu:
 
         # Initial Frame - Widgets
         self.frame_initial = tk.Frame(self.main)
-        self.label_coordfile = tk.Label(self.frame_initial, text="Coordinates file", width=13, anchor="w")
+        self.label_coordfile = tk.Label(self.frame_initial, text="Cell data file", width=13, anchor="w")
         self.label_ptypefile = tk.Label(self.frame_initial, text="Phenotype list", width=13, anchor="w")
         self.label_uploadedcoord = tk.Label(self.frame_initial, textvariable=self.global_coordfilename,
                                             anchor="w", wraplength=600)
@@ -43,20 +43,23 @@ class Menu:
 
         self.label_limitcell = tk.Label(self.frame_initial, text="Cell count", width=13, anchor="w")
         self.entry_limitcell = tk.Entry(self.frame_initial, textvariable=self.global_limitcell, width=12)
-        self.label_defaultlimitcell = tk.Label(self.frame_initial, text="Optional. By default, all cells will be processed")
+        self.label_defaultlimitcell = tk.Label(self.frame_initial, text="Total cells to be processed from the "
+                                                                        "input file. This is optional. "
+                                                                        "By default, all cells will be processed.")
 
         self.label_displaycell = tk.Label(self.frame_initial, text="Display limit", width=13, anchor="w")
         self.entry_displaycell = tk.Entry(self.frame_initial, textvariable=self.global_displaycellcnt, width=12)
-        self.label_defaultdisplaycell = tk.Label(self.frame_initial, text="Number of cells to be displayed on a single page")
+        self.label_defaultdisplaycell = tk.Label(self.frame_initial, text="Number of cells to be displayed on a "
+                                                                          "single page. The default is 20.")
 
         self.label_cropsize = tk.Label(self.frame_initial, text="Crop size", width=13, anchor="w")
         self.entry_cropsize = tk.Entry(self.frame_initial, textvariable=self.global_cropsize, width=12)
-        self.label_defaultcropsize = tk.Label(self.frame_initial, text="Pixel size to be used in cropping cells from the image")
+        self.label_defaultcropsize = tk.Label(self.frame_initial, text="Pixel size to be used in cropping cells "
+                                                                       "from the image. The default is 50.")
 
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
-        self.button_start = tk.Button(self.frame_initial, text="START", justify="left", state="disabled",
-                                      command=self.start)
+        self.button_start = tk.Button(self.frame_initial, text="START", state="disabled", command=self.start)
 
         # Initial Frame - Layout
         self.frame_initial.pack(fill='both', expand=True)
@@ -75,7 +78,7 @@ class Menu:
         self.label_cropsize.grid(row=4, column=0, padx=5, pady=5)
         self.entry_cropsize.grid(row=4, column=1, padx=5, pady=5)
         self.label_defaultcropsize.grid(row=4, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=6, column=0, padx=5, pady=15)
+        self.button_start.grid(row=6, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -150,7 +153,7 @@ class Menu:
         except ValueError:
             self.total_cellcnt = self.coord_df.shape[0]
 
-        self.global_initialcol.set(self.coord_df.shape[1])
+        self.global_colcount.set(self.coord_df.shape[1])
 
         self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt.get()))
         self.global_stats.set("Label count: %d out of %d" %(self.global_labeledcellcnt.get(), self.total_cellcnt))
@@ -192,10 +195,15 @@ class Menu:
 
             self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
             self.label_cellimage.image = cellimage
-            self.label_cellimage.pack(side='left')
+            # self.label_cellimage.pack(side="left")
+            self.label_cellimage.grid(row=0, column=0, sticky="nw", rowspan=5)
 
             self.label_cellpath = tk.Label(self.labelframe_cell, text="%s" % os.path.basename(path).split('.')[0])
             self.label_cellcoord = tk.Label(self.labelframe_cell, text="x=%s, y=%s" % (center_x, center_y))
+
+            if self.global_colcount.get() == 4:
+                self.label_initiallabel = tk.Label(self.labelframe_cell, wraplength=200,
+                                                   text="Initial label: %s" % self.coord_df.iloc[idx, 3])
 
             self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
             self.optionmenu.config(width=20)
@@ -204,10 +212,13 @@ class Menu:
             self.button_saveptype.configure(command=lambda bid=idx, bsave=self.button_saveptype,
                                                            opts=self.optionmenu: self.save_phenotype(bid, bsave, opts))
 
-            self.label_cellpath.pack(pady=(30, 5))
-            self.label_cellcoord.pack(pady=(5,30))
-            self.optionmenu.pack()
-            self.button_saveptype.pack()
+            self.label_cellpath.grid(row=0, column=1, sticky="w", padx=5, pady=(20,0))
+            self.label_cellcoord.grid(row=1, column=1, sticky="w", padx=5, pady=0)
+            if self.global_colcount.get() == 4:
+                self.label_initiallabel.grid(row=2, column=1, sticky="w", padx=5, pady=0)
+            self.optionmenu.grid(row=3, column=1, padx=5, pady=(20, 0))
+            self.button_saveptype.grid(row=4, column=1, padx=5, pady=0)
+
 
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
@@ -227,9 +238,9 @@ class Menu:
 
         # Setup canvas scroll region
         self.frame_display.update_idletasks()
+        self.canvas_display.yview_moveto(0)
         self.canvas_display.configure(scrollregion=(0, 0, self.frame_display.winfo_width(),
                                                     self.labelframe_cell.winfo_y() + 90))
-        self.canvas_display.yview_moveto(0)
 
 
     def prevnextbatch(self, type):
@@ -245,9 +256,9 @@ class Menu:
                 page = self.total_batchpage
         self.global_currentpage.set(page)
         if page in self.frame_alldisplay.keys():
+            self.canvas_display.yview_moveto(0)
             self.canvas_display.configure(scrollregion=(0, 0, self.frame_alldisplay[page].winfo_width(),
                                                         self.frame_alldisplay[page].winfo_height() + 45))
-            self.canvas_display.yview_moveto(0)
             self.frame_alldisplay[page].tkraise()
             self.canvas_display.itemconfigure(self.canvas_allframes[page], state='normal')
             for p in self.frame_alldisplay.keys():
@@ -267,7 +278,7 @@ class Menu:
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(50)
         self.global_limitcell.set("")
-        self.global_initialcol.set(0)
+        self.global_colcount.set(0)
 
     def restart(self):
         self.canvas_display.delete('all')
@@ -291,7 +302,7 @@ class Menu:
         self.coord_df.to_csv(outpath, index=False)
 
     def save_phenotype(self, bid, bsave, opts):
-        self.coord_df.iloc[bid, self.global_initialcol.get()] = self.selected_options[bid].get()
+        self.coord_df.iloc[bid, self.global_colcount.get()] = self.selected_options[bid].get()
         self.global_labeledcellcnt.set(self.global_labeledcellcnt.get() + 1)
         self.global_stats.set("Label count: %d out of %d" % (self.global_labeledcellcnt.get(), self.total_cellcnt))
         bsave.config(state="disabled", text="Saved")
