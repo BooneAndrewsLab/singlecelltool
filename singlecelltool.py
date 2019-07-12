@@ -299,7 +299,8 @@ class Menu:
             if '.' in outpath:
                 outpath = outpath.split('.')[0] + '.csv'
             outpath = outpath + '.csv'
-        self.coord_df.to_csv(outpath, index=False)
+        save_df = self.coord_df.dropna(subset=['Saved Label'])
+        save_df.to_csv(outpath, index=False)
 
     def save_phenotype(self, bid, bsave, opts):
         self.coord_df.iloc[bid, self.global_colcount.get()] = self.selected_options[bid].get()
