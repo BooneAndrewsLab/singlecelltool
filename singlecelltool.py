@@ -195,7 +195,6 @@ class Menu:
 
             self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
             self.label_cellimage.image = cellimage
-            # self.label_cellimage.pack(side="left")
             self.label_cellimage.grid(row=0, column=0, sticky="nw", rowspan=5)
 
             self.label_cellpath = tk.Label(self.labelframe_cell, text="%s" % os.path.basename(path).split('.')[0])
@@ -218,7 +217,6 @@ class Menu:
                 self.label_initiallabel.grid(row=2, column=1, sticky="w", padx=5, pady=0)
             self.optionmenu.grid(row=3, column=1, padx=5, pady=(20, 0))
             self.button_saveptype.grid(row=4, column=1, padx=5, pady=0)
-
 
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
