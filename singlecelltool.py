@@ -64,10 +64,10 @@ class Menu:
         # Initial Frame - Layout
         self.frame_initial.pack(fill='both', expand=True)
         self.label_coordfile.grid(row=0, column=0, padx=5, pady=5)
-        self.button_coordfile.grid(row=0, column=1, padx=5, pady=5)
+        self.button_coordfile.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         self.label_uploadedcoord.grid(row=0, column=2, padx=5, pady=5, sticky="w")
         self.label_ptypefile.grid(row=1, column=0, padx=5, pady=5)
-        self.button_ptypefile.grid(row=1, column=1, padx=5, pady=5)
+        self.button_ptypefile.grid(row=1, column=1, padx=5, pady=5, sticky="w")
         self.label_uploadedptype.grid(row=1, column=2, padx=5, pady=5, sticky="w")
         self.label_limitcell.grid(row=2, column=0, padx=5, pady=5)
         self.entry_limitcell.grid(row=2, column=1, padx=5, pady=5)

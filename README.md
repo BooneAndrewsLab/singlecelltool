@@ -4,19 +4,27 @@ users to view and label single cell images on a grid layout. Users can save a ph
 for each cell and then export the data._
 
 ### OS compatibility
-Linux, macOS
+Tested on: Linux, macOS
 
 
 ### Prerequisites
 Python 2.7 or 3: https://www.python.org/downloads
 
-### Required packages
+### Installation and Usage
+Clone the repository
 ```
-pillow
-pandas
-future
-numpy
-xlrd
+git clone https://github.com/BooneAndrewsLab/singlecelltool.git
+cd singlecelltool
+```
+
+Install required packages
+```
+pip install -r requirements.txt
+```
+
+Run the application
+```
+python singlecelltool.py
 ```
 
 ### User input requirements 
@@ -36,4 +44,5 @@ data file. This is optional. By default, no limit is set.
 The default is 50.
 
 ### Output
-The output is a CSV file containing all the labeled single cells. 
+The output is a CSV file containing all the labeled single cells.
+
