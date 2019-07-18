@@ -1,7 +1,15 @@
 # singlecelltool
-_Custom-made graphical user interface (GUI) application written in Python which allows 
-users to view and label single cell images on a grid layout. Users can save a phenotype 
-for each cell and then export the data._
+Custom-made graphical user interface (GUI) application that allows users to view and 
+label single cell images on a grid layout. Users can save a phenotype for each cell 
+and then export the data.
+
+This tool is used in the paper: "Exploring endocytic compartment morphology with 
+systematic genetics and single cell image analysis"
+
+_Mojca Mattiazzi Usaj, Nil Sahin, Helena Friesen, Carles Pons, Matej Usaj,
+ Myra Paz Masinas, Ermira Shuteriqi, Aleksei Shkurin, Patrick Aloy, Quaid Morris, 
+ Charles Boone, and Brenda J. Andrews_
+ 
 
 ### OS compatibility
 Tested on: Linux, macOS
@@ -20,6 +28,12 @@ cd singlecelltool
 Install required packages
 ```
 pip install -r requirements.txt
+```
+
+or if using the Anaconda Python distribution, create a new environment with the dependencies (recommended):
+```
+conda create --name singlecelltool_env --file requirements.txt
+source activate singlecelltool_env
 ```
 
 Run the application
@@ -45,4 +59,3 @@ The default is 50.
 
 ### Output
 The output is a CSV file containing all the labeled single cells.
-
