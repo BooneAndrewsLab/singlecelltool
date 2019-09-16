@@ -10,6 +10,7 @@ _Mojca Mattiazzi Usaj, Nil Sahin, Helena Friesen, Carles Pons, Matej Usaj,
  Myra Paz Masinas, Ermira Shuteriqi, Aleksei Shkurin, Patrick Aloy, Quaid Morris, 
  Charles Boone, and Brenda J. Andrews_
  
+Note: If input is a multi-frame image, the tool will display the first frame by default.
 
 ### OS compatibility
 Tested on: Linux, macOS
