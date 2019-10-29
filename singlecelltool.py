@@ -12,7 +12,7 @@ class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("900x600")
+        self.main.geometry("1000x600")
 
         # Declare global variables
         self.os = platform.system()
@@ -25,7 +25,9 @@ class Menu:
         self.global_displaycellcnt = tk.IntVar()
         self.global_cropsize = tk.IntVar()
         self.global_limitcell = tk.StringVar()
+        self.global_limitmax = tk.StringVar()
         self.global_colcount = tk.IntVar()
+        self.global_cid_input = tk.IntVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
 
@@ -41,11 +43,17 @@ class Menu:
         self.label_uploadedptype = tk.Label(self.frame_initial, textvariable=self.global_ptypefilename,
                                             anchor="w", wraplength=600)
 
-        self.label_limitcell = tk.Label(self.frame_initial, text="Cell count", width=13, anchor="w")
+        self.label_limitcell = tk.Label(self.frame_initial, text="Index minimum", width=13, anchor="w")
         self.entry_limitcell = tk.Entry(self.frame_initial, textvariable=self.global_limitcell, width=12)
-        self.label_defaultlimitcell = tk.Label(self.frame_initial, text="Total cells to be processed from the "
-                                                                        "input file. This is optional. "
-                                                                        "By default, all cells will be processed.")
+        self.label_defaultlimitcell = tk.Label(self.frame_initial, text="Index of the first cell to be processed."
+                                                                        "This is optional. "
+                                                                        "By default, minimum is set to 1.")
+
+        self.label_limitmax = tk.Label(self.frame_initial, text="Index maximum", width=13, anchor="w")
+        self.entry_limitmax = tk.Entry(self.frame_initial, textvariable=self.global_limitmax, width=12)
+        self.label_defaultlimitmax = tk.Label(self.frame_initial, text="Index of the last cell to be processed. This "
+                                                                       "is optional. By default, maximum is set to "
+                                                                       "total number of cells in the file.")
 
         self.label_displaycell = tk.Label(self.frame_initial, text="Display limit", width=13, anchor="w")
         self.entry_displaycell = tk.Entry(self.frame_initial, textvariable=self.global_displaycellcnt, width=12)
@@ -56,6 +64,12 @@ class Menu:
         self.entry_cropsize = tk.Entry(self.frame_initial, textvariable=self.global_cropsize, width=12)
         self.label_defaultcropsize = tk.Label(self.frame_initial, text="Pixel size to be used in cropping cells "
                                                                        "from the image. The default is 50.")
+
+        self.checkbox_cid_input =tk.Checkbutton(self.frame_initial, text="Cell ID", variable=self.global_cid_input,
+                                                onvalue=1, offvalue=0, width=13, anchor="w")
+        self.label_cid_input = tk.Label(self.frame_initial, text="Check this box if 'Cell ID' information is included "
+                                                                 "in the input file")
+
 
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
@@ -72,13 +86,18 @@ class Menu:
         self.label_limitcell.grid(row=2, column=0, padx=5, pady=5)
         self.entry_limitcell.grid(row=2, column=1, padx=5, pady=5)
         self.label_defaultlimitcell.grid(row=2, column=2, padx=5, pady=5, sticky="w")
-        self.label_displaycell.grid(row=3, column=0, padx=5, pady=5)
-        self.entry_displaycell.grid(row=3, column=1, padx=5, pady=5)
-        self.label_defaultdisplaycell.grid(row=3, column=2, padx=5, pady=5, sticky="w")
-        self.label_cropsize.grid(row=4, column=0, padx=5, pady=5)
-        self.entry_cropsize.grid(row=4, column=1, padx=5, pady=5)
-        self.label_defaultcropsize.grid(row=4, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=6, column=0, padx=5, pady=15, sticky="w")
+        self.label_limitmax.grid(row=3, column=0, padx=5, pady=5)
+        self.entry_limitmax.grid(row=3, column=1, padx=5, pady=5)
+        self.label_defaultlimitmax.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+        self.label_displaycell.grid(row=4, column=0, padx=5, pady=5)
+        self.entry_displaycell.grid(row=4, column=1, padx=5, pady=5)
+        self.label_defaultdisplaycell.grid(row=4, column=2, padx=5, pady=5, sticky="w")
+        self.label_cropsize.grid(row=5, column=0, padx=5, pady=5)
+        self.entry_cropsize.grid(row=5, column=1, padx=5, pady=5)
+        self.label_defaultcropsize.grid(row=5, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_cid_input.grid(row=6, column=0, padx=5, pady=5)
+        self.label_cid_input.grid(row=6, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=8, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -146,13 +165,20 @@ class Menu:
             self.coord_df = pd.read_csv(self.global_coordfilename.get())
         else:
             self.coord_df = pd.read_excel(self.global_coordfilename.get())
+        self.is_cid = self.global_cid_input.get()
 
         try:
-            self.total_cellcnt = int(self.global_limitcell.get())
-            self.coord_df = self.coord_df[:self.total_cellcnt]
+            self.cellcnt_min = int(self.global_limitcell.get()) - 1
         except ValueError:
-            self.total_cellcnt = self.coord_df.shape[0]
+            self.cellcnt_min = 0
 
+        try:
+            self.cellcnt_max = int(self.global_limitmax.get())
+        except ValueError:
+            self.cellcnt_max = self.coord_df.shape[1]
+
+        self.total_cellcnt = self.cellcnt_max - self.cellcnt_min
+        self.coord_df = self.coord_df[self.cellcnt_min:self.cellcnt_max]
         self.global_colcount.set(self.coord_df.shape[1])
 
         self.total_batchpage = int(math.ceil(self.total_cellcnt / self.global_displaycellcnt.get()))
@@ -176,7 +202,18 @@ class Menu:
         currentbatch_df = dataframe[start:end]
 
         pos = 1
-        for idx, path, center_x, center_y in currentbatch_df.iloc[:,:3].itertuples():
+        # for idx, path, center_x, center_y in currentbatch_df.iloc[:,:3].itertuples():
+        for data in currentbatch_df.iterrows():
+            idx = data[0]
+            alldata = data[1]
+            if self.global_cid_input.get() == 0:
+                info_startid = 0
+            else:
+                info_startid = 1
+            path = alldata[info_startid]
+            center_x = alldata[info_startid+1]
+            center_y = alldata[info_startid+2]
+
             modpos = pos % 2
             if modpos == 0:
                 row = int(pos/2) - 1
@@ -185,9 +222,9 @@ class Menu:
                 row = int(pos/2)
                 col = 0
 
-            # print('\tINDEX: %d - POSITION: %s - COORDINATE: %d,%d' %(idx+1, pos, row, col))
+            # print('\tINDEX: %d - POSITION: %s - COORDINATE: %d,%d' %(idx, pos, row, col))
             pos += 1
-            cell = self.imagecrop(path, center_x, center_y)
+            cell = self.imagecrop(path, int(center_x), int(center_y))
             cellimage = ImageTk.PhotoImage(cell)
 
             self.labelframe_cell = tk.LabelFrame(self.frame_display, text="%d" %(idx+1), bd=3)
@@ -200,20 +237,33 @@ class Menu:
             self.label_cellpath = tk.Label(self.labelframe_cell, text="%s" % os.path.basename(path).split('.')[0])
             self.label_cellcoord = tk.Label(self.labelframe_cell, text="x=%s, y=%s" % (center_x, center_y))
 
-            if self.global_colcount.get() == 4:
-                self.label_initiallabel = tk.Label(self.labelframe_cell, wraplength=200,
-                                                   text="Initial label: %s" % self.coord_df.iloc[idx, 3])
+            # self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx%self.total_cellcnt], *self.phenotypes)
+            self.curidx = idx + (self.total_cellcnt - int(self.global_limitmax.get()))
 
-            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx], *self.phenotypes)
+            initlabel = None
+            if info_startid == 0:
+                if (self.global_colcount.get() == 4):
+                    initlabel = self.coord_df.ix[:,3].values[self.curidx]
+                    if isinstance(initlabel, float):
+                        initlabel = None
+            else:
+                if (self.global_colcount.get() == 5):
+                    initlabel = self.coord_df.ix[:, 4].values[self.curidx]
+                    if isinstance(initlabel, float):
+                        initlabel = None
+
+            self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[self.curidx], *self.phenotypes)
             self.optionmenu.config(width=20)
 
-            self.button_saveptype = tk.Button(self.labelframe_cell, text="Save", name="%s" % str(idx + 1))
-            self.button_saveptype.configure(command=lambda bid=idx, bsave=self.button_saveptype,
+            self.button_saveptype = tk.Button(self.labelframe_cell, text="Save", name="%s" % str(idx+1))
+            self.button_saveptype.configure(command=lambda bid=self.curidx, bsave=self.button_saveptype,
                                                            opts=self.optionmenu: self.save_phenotype(bid, bsave, opts))
 
             self.label_cellpath.grid(row=0, column=1, sticky="w", padx=5, pady=(20,0))
             self.label_cellcoord.grid(row=1, column=1, sticky="w", padx=5, pady=0)
-            if self.global_colcount.get() == 4:
+            if initlabel:
+                self.label_initiallabel = tk.Label(self.labelframe_cell, wraplength=200,
+                                                   text="Initial label: %s" % initlabel)
                 self.label_initiallabel.grid(row=2, column=1, sticky="w", padx=5, pady=0)
             self.optionmenu.grid(row=3, column=1, padx=5, pady=(20, 0))
             self.button_saveptype.grid(row=4, column=1, padx=5, pady=0)
@@ -239,7 +289,6 @@ class Menu:
         self.canvas_display.yview_moveto(0)
         self.canvas_display.configure(scrollregion=(0, 0, self.frame_display.winfo_width(),
                                                     self.labelframe_cell.winfo_y() + 90))
-
 
     def prevnextbatch(self, type):
         if type == 'next':
@@ -276,7 +325,9 @@ class Menu:
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(50)
         self.global_limitcell.set("")
+        self.global_limitmax.set("")
         self.global_colcount.set(0)
+        self.global_cid_input.set(0)
 
     def restart(self):
         self.canvas_display.delete('all')
