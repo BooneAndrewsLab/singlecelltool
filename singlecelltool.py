@@ -1,11 +1,13 @@
 from PIL import ImageTk, Image
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import tkinter as tk
 import pandas as pd
 import numpy as np
 import platform
 import math
 import os
+
+import traceback
 
 
 class Menu:
@@ -382,6 +384,13 @@ class Menu:
         else:
             scroll = 1
         self.canvas_display.yview_scroll(scroll, "units")
+
+    def show_error(self, *args):
+        err = traceback.format_exception(*args)
+        messagebox.showerror('Exception', err)
+
+    # catch errors and show message to user
+    tk.Tk.report_callback_exception = show_error
 
 if __name__ == "__main__":
     root = tk.Tk()
