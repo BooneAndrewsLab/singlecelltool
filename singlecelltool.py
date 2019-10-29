@@ -14,7 +14,7 @@ class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("1000x600")
+        self.main.geometry("1050x600")
 
         # Declare global variables
         self.os = platform.system()
@@ -55,7 +55,7 @@ class Menu:
         self.entry_limitmax = tk.Entry(self.frame_initial, textvariable=self.global_limitmax, width=12)
         self.label_defaultlimitmax = tk.Label(self.frame_initial, text="Index of the last cell to be processed. This "
                                                                        "is optional. By default, maximum is set to "
-                                                                       "total number of cells in the file.")
+                                                                       "total number of cells on the file.")
 
         self.label_displaycell = tk.Label(self.frame_initial, text="Display limit", width=13, anchor="w")
         self.entry_displaycell = tk.Entry(self.frame_initial, textvariable=self.global_displaycellcnt, width=12)
@@ -325,7 +325,7 @@ class Menu:
         self.global_labeledcellcnt.set(0)
         self.global_currentpage.set(1)
         self.global_displaycellcnt.set(20)
-        self.global_cropsize.set(50)
+        self.global_cropsize.set(64)
         self.global_limitcell.set("")
         self.global_limitmax.set("")
         self.global_colcount.set(0)
