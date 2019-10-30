@@ -177,7 +177,7 @@ class Menu:
         try:
             self.cellcnt_max = int(self.global_limitmax.get())
         except ValueError:
-            self.cellcnt_max = self.coord_df.shape[1]
+            self.cellcnt_max = self.coord_df.shape[0]
 
         self.total_cellcnt = self.cellcnt_max - self.cellcnt_min
         self.coord_df = self.coord_df[self.cellcnt_min:self.cellcnt_max]
@@ -240,7 +240,10 @@ class Menu:
             self.label_cellcoord = tk.Label(self.labelframe_cell, text="x=%s, y=%s" % (center_x, center_y))
 
             # self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx%self.total_cellcnt], *self.phenotypes)
-            self.curidx = idx + (self.total_cellcnt - self.cellcnt_max)
+            try:
+                self.curidx = idx + (self.total_cellcnt - int(self.global_limitmax.get()))
+            except ValueError:
+                self.curidx = idx
 
             initlabel = None
             if info_startid == 0:
