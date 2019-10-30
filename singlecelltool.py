@@ -240,7 +240,7 @@ class Menu:
             self.label_cellcoord = tk.Label(self.labelframe_cell, text="x=%s, y=%s" % (center_x, center_y))
 
             # self.optionmenu = tk.OptionMenu(self.labelframe_cell, self.selected_options[idx%self.total_cellcnt], *self.phenotypes)
-            self.curidx = idx + (self.total_cellcnt - int(self.global_limitmax.get()))
+            self.curidx = idx + (self.total_cellcnt - self.cellcnt_max)
 
             initlabel = None
             if info_startid == 0:
