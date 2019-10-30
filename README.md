@@ -13,7 +13,7 @@ _Mojca Mattiazzi Usaj, Nil Sahin, Helena Friesen, Carles Pons, Matej Usaj,
 Note: If input is a multi-frame image, the tool will display the first frame by default.
 
 ### OS compatibility
-Tested on: Linux, macOS
+Tested on: Linux, macOS, Windows
 
 
 ### Prerequisites
