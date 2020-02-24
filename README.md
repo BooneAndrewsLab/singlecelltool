@@ -3,8 +3,8 @@ Custom-made graphical user interface (GUI) application that allows users to view
 label single cell images on a grid layout. Users can save a phenotype for each cell 
 and then export the data.
 
-This tool is used in the paper: "Exploring endocytic compartment morphology with 
-systematic genetics and single cell image analysis"
+This tool is used in the paper: "Systematic genetics and single-cell imaging reveal 
+widespread morphological pleiotropy and cell-to-cell variability"
 
 _Mojca Mattiazzi Usaj, Nil Sahin, Helena Friesen, Carles Pons, Matej Usaj,
  Myra Paz Masinas, Ermira Shuteriqi, Aleksei Shkurin, Patrick Aloy, Quaid Morris, 
