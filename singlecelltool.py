@@ -1,4 +1,4 @@
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageEnhance
 from tkinter import filedialog, messagebox
 import tkinter as tk
 import pandas as pd
@@ -26,6 +26,7 @@ class Menu:
         self.global_currentpage = tk.IntVar()
         self.global_displaycellcnt = tk.IntVar()
         self.global_cropsize = tk.IntVar()
+        self.global_brightness = tk.StringVar()
         self.global_limitcell = tk.StringVar()
         self.global_limitmax = tk.StringVar()
         self.global_colcount = tk.IntVar()
@@ -65,7 +66,14 @@ class Menu:
         self.label_cropsize = tk.Label(self.frame_initial, text="Crop size", width=13, anchor="w")
         self.entry_cropsize = tk.Entry(self.frame_initial, textvariable=self.global_cropsize, width=12)
         self.label_defaultcropsize = tk.Label(self.frame_initial, text="Pixel size to be used in cropping cells "
-                                                                       "from the image. The default is 50.")
+                                                                       "from the image. The default is 64.")
+
+        self.label_brightness = tk.Label(self.frame_initial, text="Brightness", width=13, anchor="w")
+        self.entry_brightness = tk.Entry(self.frame_initial, textvariable=self.global_brightness, width=12)
+        self.label_defaultbrightness = tk.Label(self.frame_initial, text="Brightness setting. The minimum and default "
+                                                                         "value is 1. If the cell crops look dark, try "
+                                                                         "increasing the brightness to 2 or 3 and "
+                                                                         "so on.")
 
         self.checkbox_cid_input =tk.Checkbutton(self.frame_initial, text="Cell ID", variable=self.global_cid_input,
                                                 onvalue=1, offvalue=0, width=13, anchor="w")
@@ -97,8 +105,11 @@ class Menu:
         self.label_cropsize.grid(row=5, column=0, padx=5, pady=5)
         self.entry_cropsize.grid(row=5, column=1, padx=5, pady=5)
         self.label_defaultcropsize.grid(row=5, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_cid_input.grid(row=6, column=0, padx=5, pady=5)
-        self.label_cid_input.grid(row=6, column=2, padx=5, pady=5, sticky="w")
+        self.label_brightness.grid(row=6, column=0, padx=5, pady=5)
+        self.entry_brightness.grid(row=6, column=1, padx=5, pady=5)
+        self.label_defaultbrightness.grid(row=6, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_cid_input.grid(row=7, column=0, padx=5, pady=5)
+        self.label_cid_input.grid(row=7, column=2, padx=5, pady=5, sticky="w")
         self.button_start.grid(row=8, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
@@ -248,12 +259,12 @@ class Menu:
             initlabel = None
             if info_startid == 0:
                 if (self.global_colcount.get() == 4):
-                    initlabel = self.coord_df.ix[:,3].values[self.curidx]
+                    initlabel = self.coord_df.iloc[:,3].values[self.curidx]
                     if isinstance(initlabel, float):
                         initlabel = None
             else:
                 if (self.global_colcount.get() == 5):
-                    initlabel = self.coord_df.ix[:, 4].values[self.curidx]
+                    initlabel = self.coord_df.iloc[:, 4].values[self.curidx]
                     if isinstance(initlabel, float):
                         initlabel = None
 
@@ -329,6 +340,7 @@ class Menu:
         self.global_currentpage.set(1)
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(64)
+        self.global_brightness.set(1)
         self.global_limitcell.set("")
         self.global_limitmax.set("")
         self.global_colcount.set(0)
@@ -373,7 +385,12 @@ class Menu:
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
-        return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
+
+        # Adjust brightness
+        im_bright = ImageEnhance.Brightness(image)
+        im_adjusted = im_bright.enhance(float(self.global_brightness.get()))
+
+        return im_adjusted.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
 
     def on_mousewheel(self, event):
         if self.os == 'Linux':
