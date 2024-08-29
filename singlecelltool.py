@@ -1,12 +1,12 @@
 from PIL import ImageTk, Image, ImageEnhance
 from tkinter import filedialog, messagebox
+from skimage import color
 import tkinter as tk
 import pandas as pd
 import numpy as np
 import platform
 import math
 import os
-
 import traceback
 
 
@@ -31,8 +31,13 @@ class Menu:
         self.global_limitmax = tk.StringVar()
         self.global_colcount = tk.IntVar()
         self.global_cid_input = tk.IntVar()
+        self.global_tint = tk.StringVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
+        self.CHANNEL_MULTIPLIER = {'green': [0, 1, 0],
+                                   'red': [1, 0, 0],
+                                   'blue': [0, 0, 1],
+                                   '': [1, 1, 1]}
 
         # Initialization
         self.initialize()
@@ -75,6 +80,12 @@ class Menu:
                                                                          "increasing the brightness to 2 or 3 and "
                                                                          "so on.")
 
+        self.label_tint = tk.Label(self.frame_initial, text="Channel tint", width=13, anchor="w")
+        self.entry_tint = tk.Entry(self.frame_initial, textvariable=self.global_tint, width=12)
+        self.label_defaulttint = tk.Label(self.frame_initial, text="Apply tint to single cell crops. The options are: "
+                                                                   "Green, Red and Blue. If not provided, the default "
+                                                                   "display will be in grayscale.")
+
         self.checkbox_cid_input =tk.Checkbutton(self.frame_initial, text="Cell ID", variable=self.global_cid_input,
                                                 onvalue=1, offvalue=0, width=13, anchor="w")
         self.label_cid_input = tk.Label(self.frame_initial, text="Check this box if 'Cell ID' information is included "
@@ -108,9 +119,12 @@ class Menu:
         self.label_brightness.grid(row=6, column=0, padx=5, pady=5)
         self.entry_brightness.grid(row=6, column=1, padx=5, pady=5)
         self.label_defaultbrightness.grid(row=6, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_cid_input.grid(row=7, column=0, padx=5, pady=5)
-        self.label_cid_input.grid(row=7, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=8, column=0, padx=5, pady=15, sticky="w")
+        self.label_tint.grid(row=7, column=0, padx=5, pady=5)
+        self.entry_tint.grid(row=7, column=1, padx=5, pady=5)
+        self.label_defaulttint.grid(row=7, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_cid_input.grid(row=8, column=0, padx=5, pady=5)
+        self.label_cid_input.grid(row=8, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=9, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -341,6 +355,7 @@ class Menu:
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(64)
         self.global_brightness.set(1)
+        self.global_tint.set("")
         self.global_limitcell.set("")
         self.global_limitmax.set("")
         self.global_colcount.set(0)
@@ -382,6 +397,14 @@ class Menu:
         loc_lower = center_y + self.global_cropsize.get()/2
         image = Image.open(imagepath)
         im_arr = np.array(image).astype(float)
+
+        # apply tint
+        colored_image = color.gray2rgb(im_arr)
+        multiplier = self.CHANNEL_MULTIPLIER[self.global_tint.get().lower()]
+        image_tint = multiplier * colored_image
+        im_arr = np.array(image_tint).astype(float)
+
+        # scale image
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
