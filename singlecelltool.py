@@ -31,6 +31,7 @@ class Menu:
         self.global_limitmax = tk.StringVar()
         self.global_colcount = tk.IntVar()
         self.global_cid_input = tk.IntVar()
+        self.global_dark_input = tk.IntVar()
         self.global_tint = tk.StringVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
@@ -91,6 +92,10 @@ class Menu:
         self.label_cid_input = tk.Label(self.frame_initial, text="Check this box if 'Cell ID' information is included "
                                                                  "in the input file")
 
+        self.checkbox_dark_input = tk.Checkbutton(self.frame_initial, text="Dark Mode", variable=self.global_dark_input,
+                                                 onvalue=1, offvalue=0, width=13, anchor="w")
+        self.label_dark_input = tk.Label(self.frame_initial, text="Check this box to enable Dark Mode")
+
 
         self.button_coordfile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.coordfile)
         self.button_ptypefile = tk.Button(self.frame_initial, text="Choose file", anchor="w", command=self.ptypefile)
@@ -124,7 +129,9 @@ class Menu:
         self.label_defaulttint.grid(row=7, column=2, padx=5, pady=5, sticky="w")
         self.checkbox_cid_input.grid(row=8, column=0, padx=5, pady=5)
         self.label_cid_input.grid(row=8, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=9, column=0, padx=5, pady=15, sticky="w")
+        self.checkbox_dark_input.grid(row=9, column=0, padx=5, pady=5)
+        self.label_dark_input.grid(row=9, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=10, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -162,8 +169,13 @@ class Menu:
         ptypefile = open(self.global_ptypefilename.get(), 'r')
         self.phenotypes = [p.strip() for p in ptypefile.readlines()]
 
+        self.is_dark = self.global_dark_input.get()
+
         # Main canvas display
-        self.canvas_display = tk.Canvas(self.main)
+        if self.is_dark:
+            self.canvas_display = tk.Canvas(self.main, bg='black')
+        else:
+            self.canvas_display = tk.Canvas(self.main)
         self.scroll_vertical = tk.Scrollbar(self.main, orient='vertical', command=self.canvas_display.yview)
         self.canvas_display.pack(expand='yes', fill='both', side='left')
         self.scroll_vertical.pack(fill='y', side='right')
@@ -219,7 +231,10 @@ class Menu:
 
     def create_cellframes(self, dataframe, currentpage):
         # Create new frame display
-        self.frame_display = tk.Frame(self.canvas_display)
+        if self.is_dark:
+            self.frame_display = tk.Frame(self.canvas_display, bg='black')
+        else:
+            self.frame_display = tk.Frame(self.canvas_display)
         self.frame_alldisplay[currentpage] = self.frame_display
         self.canvas_allframes[currentpage] = self.canvas_display.create_window(0, 50, window=self.frame_display,
                                                                                anchor='nw')
@@ -254,7 +269,10 @@ class Menu:
             cell = self.imagecrop(path, int(center_x), int(center_y))
             cellimage = ImageTk.PhotoImage(cell)
 
-            self.labelframe_cell = tk.LabelFrame(self.frame_display, text="%d" %(idx+1), bd=3)
+            if self.is_dark:
+                self.labelframe_cell = tk.LabelFrame(self.frame_display, text="%d" %(idx+1), bd=3, bg='black')
+            else:
+                self.labelframe_cell = tk.LabelFrame(self.frame_display, text="%d" % (idx + 1), bd=3)
             self.labelframe_cell.grid(row=row, column=col, padx=10, pady=20)
 
             self.label_cellimage = tk.Label(self.labelframe_cell, image=cellimage)
@@ -360,6 +378,7 @@ class Menu:
         self.global_limitmax.set("")
         self.global_colcount.set(0)
         self.global_cid_input.set(0)
+        self.global_dark_input.set(0)
 
     def restart(self):
         self.canvas_display.delete('all')
