@@ -32,12 +32,17 @@ class Menu:
         self.global_colcount = tk.IntVar()
         self.global_cid_input = tk.IntVar()
         self.global_dark_input = tk.IntVar()
+        self.global_channel = tk.StringVar()
         self.global_tint = tk.StringVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
+        self.CHANNEL_SEEK = {'1': 0, '2': 1, '3': 2}
         self.CHANNEL_MULTIPLIER = {'green': [0, 1, 0],
                                    'red': [1, 0, 0],
                                    'blue': [0, 0, 1],
+                                   '1': [0, 1, 0],
+                                   '2': [1, 0, 0],
+                                   '3': [0, 0, 1],
                                    '': [1, 1, 1]}
 
         # Initialization
@@ -81,11 +86,17 @@ class Menu:
                                                                          "increasing the brightness to 2 or 3 and "
                                                                          "so on.")
 
-        self.label_tint = tk.Label(self.frame_initial, text="Channel tint", width=13, anchor="w")
+        self.label_channel = tk.Label(self.frame_initial, text="Channel(s)", width=13, anchor="w")
+        self.entry_channel = tk.Entry(self.frame_initial, textvariable=self.global_channel, width=12)
+        self.label_defaultchannel = tk.Label(self.frame_initial, text="Specify which channel(s) to view. Must be "
+                                                                      "comma-separated if multi-channel. "
+                                                                      "The default is 1.")
+
+        self.label_tint = tk.Label(self.frame_initial, text="Channel tint(s)", width=13, anchor="w")
         self.entry_tint = tk.Entry(self.frame_initial, textvariable=self.global_tint, width=12)
-        self.label_defaulttint = tk.Label(self.frame_initial, text="Apply tint to single cell crops. The options are: "
-                                                                   "Green, Red and Blue. If not provided, the default "
-                                                                   "display will be in grayscale.")
+        self.label_defaulttint = tk.Label(self.frame_initial, text="Apply tint(s): Green, Red or Blue. Must be "
+                                                                   "comma-separated if multi-channel. The default is "
+                                                                   "grayscale (single-channel) and GRB (multi-channel).")
 
         self.checkbox_cid_input =tk.Checkbutton(self.frame_initial, text="Cell ID", variable=self.global_cid_input,
                                                 onvalue=1, offvalue=0, width=13, anchor="w")
@@ -124,14 +135,17 @@ class Menu:
         self.label_brightness.grid(row=6, column=0, padx=5, pady=5)
         self.entry_brightness.grid(row=6, column=1, padx=5, pady=5)
         self.label_defaultbrightness.grid(row=6, column=2, padx=5, pady=5, sticky="w")
-        self.label_tint.grid(row=7, column=0, padx=5, pady=5)
-        self.entry_tint.grid(row=7, column=1, padx=5, pady=5)
-        self.label_defaulttint.grid(row=7, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_cid_input.grid(row=8, column=0, padx=5, pady=5)
-        self.label_cid_input.grid(row=8, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_dark_input.grid(row=9, column=0, padx=5, pady=5)
-        self.label_dark_input.grid(row=9, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=10, column=0, padx=5, pady=15, sticky="w")
+        self.label_channel.grid(row=7, column=0, padx=5, pady=5)
+        self.entry_channel.grid(row=7, column=1, padx=5, pady=5)
+        self.label_defaultchannel.grid(row=7, column=2, padx=5, pady=5, sticky="w")
+        self.label_tint.grid(row=8, column=0, padx=5, pady=5)
+        self.entry_tint.grid(row=8, column=1, padx=5, pady=5)
+        self.label_defaulttint.grid(row=8, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_cid_input.grid(row=9, column=0, padx=5, pady=5)
+        self.label_cid_input.grid(row=9, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_dark_input.grid(row=10, column=0, padx=5, pady=5)
+        self.label_dark_input.grid(row=10, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=11, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -373,6 +387,7 @@ class Menu:
         self.global_displaycellcnt.set(20)
         self.global_cropsize.set(64)
         self.global_brightness.set(1)
+        self.global_channel.set("1")
         self.global_tint.set("")
         self.global_limitcell.set("")
         self.global_limitmax.set("")
@@ -409,21 +424,8 @@ class Menu:
         bsave.config(state="disabled", text="Saved")
         opts.config(state="disabled")
 
-    def imagecrop(self, imagepath, center_x, center_y):
-        loc_left = center_x - self.global_cropsize.get()/2
-        loc_upper = center_y - self.global_cropsize.get()/2
-        loc_right = center_x + self.global_cropsize.get()/2
-        loc_lower = center_y + self.global_cropsize.get()/2
-        image = Image.open(imagepath)
-        im_arr = np.array(image).astype(float)
 
-        # apply tint
-        colored_image = color.gray2rgb(im_arr)
-        multiplier = self.CHANNEL_MULTIPLIER[self.global_tint.get().lower()]
-        image_tint = multiplier * colored_image
-        im_arr = np.array(image_tint).astype(float)
-
-        # scale image
+    def rescale_image(self, im_arr, im_scale):
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
@@ -432,7 +434,43 @@ class Menu:
         im_bright = ImageEnhance.Brightness(image)
         im_adjusted = im_bright.enhance(float(self.global_brightness.get()))
 
-        return im_adjusted.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
+        return im_adjusted
+
+
+    def channel_tint(self, im_arr):
+        colored_image = color.gray2rgb(im_arr)
+        multiplier = self.CHANNEL_MULTIPLIER[self.global_tint.get().lower()]
+        image_tint = multiplier * colored_image
+        im_arr = np.array(image_tint).astype(float)
+
+
+    def imagecrop(self, imagepath, center_x, center_y):
+        loc_left = center_x - self.global_cropsize.get()/2
+        loc_upper = center_y - self.global_cropsize.get()/2
+        loc_right = center_x + self.global_cropsize.get()/2
+        loc_lower = center_y + self.global_cropsize.get()/2
+
+        # get channel(s)
+        all_crops = []
+        channels = (self.global_channel.get()).replace(' ', '').split(',')
+        tints = [t.lower() for t in (self.global_tint.get()).replace(' ', '').split(',')]
+        if len(channels) != len(tints):
+            messagebox.showerror('Input Error', "Please provide corresponding color tint to each channel.")
+        for ix_ch, channel in enumerate(channels):
+            ch = int(channel)
+            tint =  tints[ix_ch]
+            image = Image.open(imagepath)
+            image.seek(self.CHANNEL_SEEK[ch])
+            im_arr = np.array(image).astype(float)
+
+            self.channel_tint(im_arr, tint)
+
+        # apply tint
+
+        # scale image
+
+
+        return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
 
     def on_mousewheel(self, event):
         if self.os == 'Linux':
