@@ -14,7 +14,7 @@ class Menu:
     def __init__(self, main):
         self.main = main
         self.main.title("Single Cell Labelling Tool")
-        self.main.geometry("1050x600")
+        self.main.geometry("1300x600")
 
         # Declare global variables
         self.os = platform.system()
@@ -425,7 +425,7 @@ class Menu:
         opts.config(state="disabled")
 
 
-    def rescale_image(self, im_arr, im_scale):
+    def rescale_image(self, im_arr):
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
@@ -437,11 +437,13 @@ class Menu:
         return im_adjusted
 
 
-    def channel_tint(self, im_arr):
+    def channel_tint(self, im_arr, tint):
         colored_image = color.gray2rgb(im_arr)
-        multiplier = self.CHANNEL_MULTIPLIER[self.global_tint.get().lower()]
+        multiplier = self.CHANNEL_MULTIPLIER[tint]
         image_tint = multiplier * colored_image
         im_arr = np.array(image_tint).astype(float)
+
+        return im_arr
 
 
     def imagecrop(self, imagepath, center_x, center_y):
@@ -454,23 +456,31 @@ class Menu:
         all_crops = []
         channels = (self.global_channel.get()).replace(' ', '').split(',')
         tints = [t.lower() for t in (self.global_tint.get()).replace(' ', '').split(',')]
+
         if len(channels) != len(tints):
-            messagebox.showerror('Input Error', "Please provide corresponding color tint to each channel.")
+            raise Exception("Please provide corresponding color tint to each channel.")
         for ix_ch, channel in enumerate(channels):
             ch = int(channel)
-            tint =  tints[ix_ch]
+            tint = tints[ix_ch]
             image = Image.open(imagepath)
-            image.seek(self.CHANNEL_SEEK[ch])
+            image.seek(self.CHANNEL_SEEK[channel])
             im_arr = np.array(image).astype(float)
 
-            self.channel_tint(im_arr, tint)
+            im_arr = self.channel_tint(im_arr, tint)
+            img_adjusted = self.rescale_image(im_arr)
+            crop = img_adjusted.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
+            all_crops.append(crop)
 
-        # apply tint
+        if len(all_crops) == 1:
+            crop_final = all_crops[0]
 
-        # scale image
+        else:
+            crop_final = np.array(all_crops[0])
+            for c in all_crops[1:]:
+                crop_final += np.array(c)
+            crop_final = Image.fromarray(crop_final)
 
-
-        return image.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
+        return crop_final
 
     def on_mousewheel(self, event):
         if self.os == 'Linux':
