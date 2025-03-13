@@ -34,6 +34,8 @@ class Menu:
         self.global_dark_input = tk.IntVar()
         self.global_channel = tk.StringVar()
         self.global_tint = tk.StringVar()
+        self.global_pixel_min = tk.StringVar()
+        self.global_pixel_max = tk.StringVar()
         self.global_coordext = ['csv', 'xls', 'xlsx']
         self.global_ptypeext = ['txt']
         self.CHANNEL_SEEK = {'1': 0, '2': 1, '3': 2}
@@ -98,6 +100,16 @@ class Menu:
                                                                    "comma-separated if multi-channel. The default is "
                                                                    "grayscale (single-channel) and GRB (multi-channel).")
 
+        self.label_pixel_min = tk.Label(self.frame_initial, text="Pixel minimum", width=13, anchor="w")
+        self.entry_pixel_min = tk.Entry(self.frame_initial, textvariable=self.global_pixel_min, width=12)
+        self.label_default_pixel_min = tk.Label(self.frame_initial, text="Set the minimum displayed pixel intensity "
+                                                                         "value. This is optional.")
+
+        self.label_pixel_max = tk.Label(self.frame_initial, text="Pixel maximum", width=13, anchor="w")
+        self.entry_pixel_max= tk.Entry(self.frame_initial, textvariable=self.global_pixel_max, width=12)
+        self.label_default_pixel_max= tk.Label(self.frame_initial, text="Set the maximum displayed pixel intensity "
+                                                                        "value. This is optional.")
+
         self.checkbox_cid_input =tk.Checkbutton(self.frame_initial, text="Cell ID", variable=self.global_cid_input,
                                                 onvalue=1, offvalue=0, width=13, anchor="w")
         self.label_cid_input = tk.Label(self.frame_initial, text="Check this box if 'Cell ID' information is included "
@@ -141,11 +153,17 @@ class Menu:
         self.label_tint.grid(row=8, column=0, padx=5, pady=5)
         self.entry_tint.grid(row=8, column=1, padx=5, pady=5)
         self.label_defaulttint.grid(row=8, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_cid_input.grid(row=9, column=0, padx=5, pady=5)
-        self.label_cid_input.grid(row=9, column=2, padx=5, pady=5, sticky="w")
-        self.checkbox_dark_input.grid(row=10, column=0, padx=5, pady=5)
-        self.label_dark_input.grid(row=10, column=2, padx=5, pady=5, sticky="w")
-        self.button_start.grid(row=11, column=0, padx=5, pady=15, sticky="w")
+        self.label_pixel_min.grid(row=9, column=0, padx=5, pady=5)
+        self.entry_pixel_min.grid(row=9, column=1, padx=5, pady=5)
+        self.label_default_pixel_min.grid(row=9, column=2, padx=5, pady=5, sticky="w")
+        self.label_pixel_max.grid(row=10, column=0, padx=5, pady=5)
+        self.entry_pixel_max.grid(row=10, column=1, padx=5, pady=5)
+        self.label_default_pixel_max.grid(row=10, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_cid_input.grid(row=11, column=0, padx=5, pady=5)
+        self.label_cid_input.grid(row=11, column=2, padx=5, pady=5, sticky="w")
+        self.checkbox_dark_input.grid(row=12, column=0, padx=5, pady=5)
+        self.label_dark_input.grid(row=12, column=2, padx=5, pady=5, sticky="w")
+        self.button_start.grid(row=13, column=0, padx=5, pady=15, sticky="w")
 
     def check_uploads(self):
         if (self.global_coordfilename.get() != "No file chosen") \
@@ -394,6 +412,8 @@ class Menu:
         self.global_colcount.set(0)
         self.global_cid_input.set(0)
         self.global_dark_input.set(0)
+        self.global_pixel_min.set("")
+        self.global_pixel_max.set("")
 
     def restart(self):
         self.canvas_display.delete('all')
@@ -426,6 +446,17 @@ class Menu:
 
 
     def rescale_image(self, im_arr):
+        # Adjust minimum and maximum display range
+        pixel_min = self.global_pixel_min.get()
+        pixel_max = self.global_pixel_max.get()
+        if pixel_min:
+            below_min = im_arr < int(pixel_min)
+            im_arr[below_min] = int(pixel_min)
+        if pixel_max:
+            above_max = im_arr > int(pixel_max)
+            im_arr[above_max] = int(pixel_max)
+
+        # Scale image and convert to 8-bit
         im_scale = 1 / im_arr.max()
         im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
@@ -467,8 +498,9 @@ class Menu:
             im_arr = np.array(image).astype(float)
 
             im_arr = self.channel_tint(im_arr, tint)
-            img_adjusted = self.rescale_image(im_arr)
-            crop = img_adjusted.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
+            img_rescaled = self.rescale_image(im_arr)
+
+            crop = img_rescaled.crop((loc_left, loc_upper, loc_right, loc_lower)).resize((200, 200), Image.LANCZOS)
             all_crops.append(crop)
 
         if len(all_crops) == 1:
