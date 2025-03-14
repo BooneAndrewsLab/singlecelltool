@@ -451,7 +451,7 @@ class Menu:
         pixel_max = self.global_pixel_max.get()
         if pixel_min:
             below_min = im_arr < int(pixel_min)
-            im_arr[below_min] = int(pixel_min)
+            im_arr[below_min] = 0
         if pixel_max:
             above_max = im_arr > int(pixel_max)
             im_arr[above_max] = int(pixel_max)
