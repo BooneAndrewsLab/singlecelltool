@@ -445,6 +445,11 @@ class Menu:
         opts.config(state="disabled")
 
 
+    def min_max_scaling(self, a, pixel_min, pixel_max):
+        normalized_val = (a - pixel_min) / (pixel_max - pixel_min)
+        return normalized_val
+
+
     def rescale_image(self, im_arr):
         # Adjust minimum and maximum display range
         pixel_min = self.global_pixel_min.get()
@@ -452,13 +457,19 @@ class Menu:
         if pixel_min:
             below_min = im_arr < int(pixel_min)
             im_arr[below_min] = 0
+        else:
+            pixel_min = im_arr.min()
         if pixel_max:
             above_max = im_arr > int(pixel_max)
             im_arr[above_max] = int(pixel_max)
+        else:
+            pixel_max = im_arr.max()
 
         # Scale image and convert to 8-bit
-        im_scale = 1 / im_arr.max()
-        im_new = ((im_arr * im_scale) * 255).round().astype(np.uint8)
+        im_normalized = self.min_max_scaling(im_arr, int(pixel_min), int(pixel_max))
+        im_neg = im_normalized < 0
+        im_normalized[im_neg] = 0
+        im_new = (im_normalized * 255).round().astype(np.uint8)
         image = Image.fromarray(im_new)
 
         # Adjust brightness
