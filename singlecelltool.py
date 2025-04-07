@@ -504,7 +504,10 @@ class Menu:
         for ix_ch, channel in enumerate(channels):
             ch = int(channel)
             tint = tints[ix_ch]
-            image = Image.open(imagepath)
+            if imagepath.endswith('.png'):
+               image = Image.open(imagepath).convert('L')
+            else:
+                image = Image.open(imagepath)
             image.seek(self.CHANNEL_SEEK[channel])
             im_arr = np.array(image).astype(float)
 
