@@ -4,10 +4,12 @@ from skimage import color
 import tkinter as tk
 import pandas as pd
 import numpy as np
+import traceback
 import platform
+import zipfile
 import math
 import os
-import traceback
+import io
 
 
 class Menu:
@@ -226,9 +228,11 @@ class Menu:
         # Inside the canvas
         self.button_restart = tk.Button(self.canvas_display, text="HOME", command=self.restart)
         self.button_export = tk.Button(self.canvas_display, text="Export labeled data", command=self.exportdata)
+        self.button_download = tk.Button(self.canvas_display, text="Download crops", command=self.download_crops)
         self.label_stats = tk.Label(self.canvas_display, textvariable=self.global_stats)
         self.canvas_display.create_window(10, 10, window=self.button_restart, anchor='nw')
         self.canvas_display.create_window(80, 10, window=self.button_export, anchor='nw')
+        self.canvas_display.create_window(220, 10, window=self.button_download, anchor='nw')
         self.canvas_display.create_window(700, 10, window=self.label_stats, anchor='nw')
 
         # Process coordinates file
@@ -433,9 +437,48 @@ class Menu:
         else:
             if '.' in outpath:
                 outpath = outpath.split('.')[0] + '.csv'
-            outpath = outpath + '.csv'
+            else:
+                outpath = outpath + '.csv'
         save_df = self.coord_df.dropna(subset=['Saved Label'])
         save_df.to_csv(outpath, index=False)
+
+    def download_crops(self):
+        zip_outpath = filedialog.asksaveasfilename(initialdir="/home/myra/phenomics/apps/singlecell",
+                                                   title="Select output folder and filename")
+        if self.is_cid:
+            index_img = 1
+            index_x = 2
+            index_y = 3
+        else:
+            index_img = 0
+            index_x = 1
+            index_y = 2
+
+        with zipfile.ZipFile(zip_outpath, 'w') as zf:
+            for rows in self.coord_df.iterrows():
+                ix_data, data = rows
+                imgpath = data[index_img]
+                center_x = data[index_x]
+                center_y = data[index_y]
+                img_basename = os.path.basename(imgpath).split('.')[0]
+                crop_filename = f'{img_basename}_X_{center_x}_Y_{center_y}.tiff'
+
+                loc_left = center_x - self.global_cropsize.get() / 2
+                loc_upper = center_y - self.global_cropsize.get() / 2
+                loc_right = center_x + self.global_cropsize.get() / 2
+                loc_lower = center_y + self.global_cropsize.get() / 2
+
+                if imgpath.endswith('.png'):
+                   image = Image.open(imgpath).convert('L')
+                else:
+                    image = Image.open(imgpath)
+
+                cropped_img = image.crop((loc_left, loc_upper, loc_right, loc_lower))
+                img_byte_arr = io.BytesIO()
+                cropped_img.save(img_byte_arr, format='TIFF')
+                img_byte_arr = img_byte_arr.getvalue()
+                zf.writestr(crop_filename , img_byte_arr)
+        print("Saved crops to:", zip_outpath)
 
     def save_phenotype(self, bid, bsave, opts):
         self.coord_df.iloc[bid, self.global_colcount.get()] = self.selected_options[bid].get()
