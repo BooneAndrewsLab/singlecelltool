@@ -473,12 +473,20 @@ class Menu:
                 else:
                     image = Image.open(imgpath)
 
-                cropped_img = image.crop((loc_left, loc_upper, loc_right, loc_lower))
+                cropped_images = []
+                image_frames = image.n_frames
+                for i in range(image_frames):
+                    image.seek(i)
+                    crop_img = image.crop((loc_left, loc_upper, loc_right, loc_lower))
+                    cropped_images.append(crop_img)
+
                 img_byte_arr = io.BytesIO()
-                cropped_img.save(img_byte_arr, format='TIFF')
+                cropped_images[0].save(img_byte_arr, format='TIFF', save_all=True, append_images=cropped_images[1:])
                 img_byte_arr = img_byte_arr.getvalue()
                 zf.writestr(crop_filename , img_byte_arr)
+
         print("Saved crops to:", zip_outpath)
+
 
     def save_phenotype(self, bid, bsave, opts):
         self.coord_df.iloc[bid, self.global_colcount.get()] = self.selected_options[bid].get()
