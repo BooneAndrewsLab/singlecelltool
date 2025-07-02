@@ -286,6 +286,7 @@ class Menu:
             alldata = data[1]
             if self.global_cid_input.get() == 0:
                 info_startid = 0
+
             else:
                 info_startid = 1
             path = alldata[info_startid]
@@ -343,14 +344,21 @@ class Menu:
             self.button_saveptype.configure(command=lambda bid=self.curidx, bsave=self.button_saveptype,
                                                            opts=self.optionmenu: self.save_phenotype(bid, bsave, opts))
 
+
             self.label_cellpath.grid(row=0, column=1, sticky="w", padx=5, pady=(20,0))
             self.label_cellcoord.grid(row=1, column=1, sticky="w", padx=5, pady=0)
+            next_row_idx = 2
             if initlabel:
                 self.label_initiallabel = tk.Label(self.labelframe_cell, wraplength=200,
                                                    text="Initial label: %s" % initlabel)
-                self.label_initiallabel.grid(row=2, column=1, sticky="w", padx=5, pady=0)
-            self.optionmenu.grid(row=3, column=1, padx=5, pady=(20, 0))
-            self.button_saveptype.grid(row=4, column=1, padx=5, pady=0)
+                self.label_initiallabel.grid(row=next_row_idx, column=1, sticky="w", padx=5, pady=0)
+                next_row_idx += 1
+            if self.global_cid_input.get() == 1:
+                self.label_cellid = tk.Label(self.labelframe_cell, text="Cell ID: %s" % alldata[0])
+                self.label_cellid.grid(row=next_row_idx, column=1, sticky="w", padx=5, pady=(20,0))
+                next_row_idx += 1
+            self.optionmenu.grid(row=next_row_idx, column=1, padx=5, pady=(20, 0))
+            self.button_saveptype.grid(row=next_row_idx+1, column=1, padx=5, pady=0)
 
         # LabelFrame for next button/batch
         self.labelframe_cell = tk.LabelFrame(self.frame_display, text="", bd=0)
