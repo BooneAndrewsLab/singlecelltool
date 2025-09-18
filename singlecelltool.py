@@ -482,9 +482,14 @@ class Menu:
                     image = Image.open(imgpath)
 
                 cropped_images = []
-                image_frames = image.n_frames
+                if getattr(image, "n_frames", 1) > 1:
+                    image_frames = image.n_frames
+                else:
+                    image_frames = 1
+
                 for i in range(image_frames):
-                    image.seek(i)
+                    if image_frames > 1:
+                        image.seek(i)
                     crop_img = image.crop((loc_left, loc_upper, loc_right, loc_lower))
                     cropped_images.append(crop_img)
 
